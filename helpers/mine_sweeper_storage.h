@@ -6,8 +6,6 @@
 #include <storage/storage.h>
 #include <toolbox/stream/file_stream.h>
 
-#include "../minesweeper.h"
-
 #define PROFILING_FILE_DIRECTORY_PATH EXT_PATH("apps_data/f0_mine_sweeper/profiling")
 #define PROFILING_FILE_SAVE_PATH PROFILING_FILE_DIRECTORY_PATH "/profilingf0_mine_sweeper_profiling.txt"
 

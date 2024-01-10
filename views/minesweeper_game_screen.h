@@ -7,8 +7,9 @@
 #define MINEWEEPER_GAME_SCREEN_H
 
 #include <gui/view.h>
-
 #include "minesweeper_game_screen_i.h"
+#include <toolbox/stream/file_stream.h>
+#include "../helpers/mine_sweeper_storage.h"
 
 // MAX TILES ALLOWED
 #define MINESWEEPER_BOARD_MAX_TILES  (1<<10)
@@ -43,7 +44,7 @@ typedef bool (*GameScreenInputCallback)(InputEvent* event, void* context);
  *
  * @return      MineSweeperGameScreen* instance 
  */
-MineSweeperGameScreen* mine_sweeper_game_screen_alloc_and_profile(uint8_t width, uint8_t height, uint8_t difficulty, bool ensure_solvable, uint16_t iter);
+MineSweeperGameScreen* mine_sweeper_game_screen_alloc_and_profile(uint8_t width, uint8_t height, uint8_t difficulty, bool ensure_solvable, uint16_t iter, Stream* fs);
 
 /** Deinitialize and free Start Screen view
  *

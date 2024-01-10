@@ -1,5 +1,4 @@
 #include "minesweeper.h"
-//#include <args.h>
 
 static bool minesweeper_custom_event_callback(void* context, uint32_t custom_event) {
     furi_assert(context);
@@ -19,7 +18,7 @@ static void minesweeper_tick_event_callback(void* context) {
     return scene_manager_handle_tick_event(app->scene_manager);
 }
 
-static MineSweeperApp* app_alloc(uint16_t w, uint16_t h, uint8_t d, bool solvable, uint16_t iter) { 
+static MineSweeperApp* app_alloc(uint16_t w, uint16_t h, uint8_t d, bool solvable, uint16_t iter, Stream* fs) { 
     MineSweeperApp* app = (MineSweeperApp*)malloc(sizeof(MineSweeperApp));
     
     // NotificationApp Service
@@ -48,7 +47,8 @@ static MineSweeperApp* app_alloc(uint16_t w, uint16_t h, uint8_t d, bool solvabl
             h,
             d,
             solvable,
-            iter);
+            iter,
+            fs);
 
     if (app->game_screen == NULL) {
         // Free View Dispatcher and Scene Manager
@@ -97,17 +97,29 @@ static void app_free(MineSweeperApp* app) {
 int32_t minesweeper_app(void* p) {
     UNUSED(p);
 
-    uint8_t width = 16;
-    uint8_t height = 7;
+    uint8_t width = 32;
+    uint8_t height = 32;
     uint8_t difficulty = 0;
     bool solvable = true;
-    uint16_t iter = 100;
+    uint16_t iter = 30000;
 
-    MineSweeperApp* app = app_alloc(width, height, difficulty, solvable, iter);
+    Stream* fs = open_profiling_file();
+
+    if (fs == NULL) {
+
+        return 1;
+    }
+
+    append_to_profiling_file(
+            fs,
+            "total_iter,s_rate,run_time(ms),avs(ms)\n");
+
+    MineSweeperApp* app = app_alloc(width, height, difficulty, solvable, iter, fs);
 
     if (app == NULL) {
         return 1;
     }
+
 
     // This will be the initial scene on app startup
     scene_manager_next_scene(app->scene_manager, MineSweeperSceneGameScreen);

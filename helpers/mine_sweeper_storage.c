@@ -22,14 +22,14 @@ Stream* open_profiling_file() {
 
     // Open File, create if not exists
     if(!storage_common_stat(storage, PROFILING_FILE_SAVE_PATH, NULL) == FSE_OK) {
-        FURI_LOG_I(TAG, "Config file %s is not found. Will create new.", PROFILING_FILE_SAVE_PATH);
+        FURI_LOG_I(TAG_PROFILER, "Config file %s is not found. Will create new.", PROFILING_FILE_SAVE_PATH);
         if(storage_common_stat(storage, PROFILING_FILE_DIRECTORY_PATH, NULL) == FSE_NOT_EXIST) {
             FURI_LOG_I(
-                TAG,
+                TAG_PROFILER,
                 "Directory %s doesn't exist. Will create new.",
                 PROFILING_FILE_DIRECTORY_PATH);
             if(!storage_simply_mkdir(storage, PROFILING_FILE_DIRECTORY_PATH)) {
-                FURI_LOG_E(TAG, "Error creating directory %s", PROFILING_FILE_DIRECTORY_PATH);
+                FURI_LOG_E(TAG_PROFILER, "Error creating directory %s", PROFILING_FILE_DIRECTORY_PATH);
             }
         }
     }

@@ -1,4 +1,3 @@
-#include "../helpers/mine_sweeper_storage.h"
 #include "minesweeper_game_screen.h"
 
 #include <input/input.h>
@@ -466,14 +465,14 @@ static void mine_sweeper_game_screen_view_draw_callback(Canvas* canvas, void* _m
     
     furi_string_printf(
             model->str,
-            "PROFILER");
+            "PROFILER DONE.\nPRESS BACK");
 
     canvas_draw_str_aligned(
             canvas,
-            32,
-            64,
-            AlignCenter,
-            AlignCenter,
+            20,
+            40,
+            AlignLeft,
+            AlignBottom,
             furi_string_get_cstr(model->str));
 }
 
@@ -482,12 +481,11 @@ static bool mine_sweeper_game_screen_view_input_callback(InputEvent* event, void
     furi_assert(event);
 
     MineSweeperGameScreen* instance = context;
-    MineSweeperApp* app = instance->context;
-
-    return scene_manager_previous_scene(app->scene_manager);
+    UNUSED(instance);
+    return false;
 }
 
-MineSweeperGameScreen* mine_sweeper_game_screen_alloc_and_profile(uint8_t width, uint8_t height, uint8_t difficulty, bool ensure_solvable, uint16_t iter) {
+MineSweeperGameScreen* mine_sweeper_game_screen_alloc_and_profile(uint8_t width, uint8_t height, uint8_t difficulty, bool ensure_solvable, uint16_t iter, Stream* fs) {
     MineSweeperGameScreen* mine_sweeper_game_screen = (MineSweeperGameScreen*)malloc(sizeof(MineSweeperGameScreen));
     
     mine_sweeper_game_screen->view = view_alloc();
@@ -513,27 +511,8 @@ MineSweeperGameScreen* mine_sweeper_game_screen_alloc_and_profile(uint8_t width,
     mine_sweeper_game_screen_set_board_information(mine_sweeper_game_screen, width, height, difficulty, ensure_solvable);
 
     size_t memsz = sizeof(MineSweeperTile) * MINESWEEPER_BOARD_MAX_TILES;
-    
+    uint16_t total_iter = iter;
     uint16_t successes = 0;
-
-    Stream* fs = open_profiling_file();
-
-    if (fs == NULL) {
-
-
-        with_view_model(
-            mine_sweeper_game_screen->view,
-            MineSweeperGameScreenModel * model,
-            {
-                furi_string_free(model->str);
-            },
-            true
-        );
-
-        view_free(mine_sweeper_game_screen->view);
-
-        return NULL;
-    }
 
     uint32_t start_tick = furi_get_tick();
 
@@ -563,18 +542,18 @@ MineSweeperGameScreen* mine_sweeper_game_screen_alloc_and_profile(uint8_t width,
 
         iter--;
 
-    } while (iter+1 > 0);
+    } while (iter >= 1);
 
     uint32_t ticks_elapsed = furi_get_tick() - start_tick;
     double sec = (double)ticks_elapsed / (double)furi_kernel_get_tick_frequency();
     double milliseconds = sec * 1000.0L;
     append_to_profiling_file(
             fs,
-            "%d total iter with a %.02f success rate\n%.03f milliseconds of run time (%.05f ms avg)",
-            iter,
-            (double)successes/(double)iter,
+            "%d,%.05f,%.05f,%.05f\n",
+            total_iter,
+            (double)successes/(double)total_iter,
             milliseconds,
-            milliseconds/(double)iter);
+            milliseconds/(double)total_iter);
 
 
     close_profiling_file(fs);
