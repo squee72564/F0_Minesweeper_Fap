@@ -101,7 +101,7 @@ int32_t minesweeper_app(void* p) {
     uint8_t height = 7;
     uint8_t difficulty = 0;
     bool solvable = true;
-    uint16_t iter = 10000;
+    uint16_t iter = 2700;
 
     Stream* fs = open_profiling_file();
 
