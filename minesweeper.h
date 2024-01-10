@@ -17,7 +17,7 @@
 #include "scenes/minesweeper_scene.h"
 #include "views/minesweeper_game_screen.h"
 #include "helpers/mine_sweeper_storage.h"
-#include "f0_minesweeper_aer72564_icons.h"
+#include "f0_minesweeper_aer72564_profiler_icons.h"
 
 #define TAG "Mine Sweeper Application"
 

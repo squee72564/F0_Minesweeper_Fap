@@ -50,6 +50,15 @@ static MineSweeperApp* app_alloc(uint16_t w, uint16_t h, uint8_t d, bool solvabl
             solvable,
             iter);
 
+    if (app->game_screen == NULL) {
+        // Free View Dispatcher and Scene Manager
+        scene_manager_free(app->scene_manager);
+        view_dispatcher_free(app->view_dispatcher);
+
+        return NULL;
+
+    }
+
     view_dispatcher_add_view(
         app->view_dispatcher,
         MineSweeperGameScreenView,
@@ -95,6 +104,10 @@ int32_t minesweeper_app(void* p) {
     uint16_t iter = 100;
 
     MineSweeperApp* app = app_alloc(width, height, difficulty, solvable, iter);
+
+    if (app == NULL) {
+        return 1;
+    }
 
     // This will be the initial scene on app startup
     scene_manager_next_scene(app->scene_manager, MineSweeperSceneGameScreen);

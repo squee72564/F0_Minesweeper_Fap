@@ -8,8 +8,8 @@
 
 #include "../minesweeper.h"
 
-#define MINESWEEPER_SETTINGS_FILE_VERSION 1
-#define PROFILING_FILE_DIRECTORY_PATH "apps_data/f0_mine_sweeper/f0_mine_sweeper_profiling.txt"
+#define PROFILING_FILE_DIRECTORY_PATH EXT_PATH("apps_data/f0_mine_sweeper/profiling")
+#define PROFILING_FILE_SAVE_PATH PROFILING_FILE_DIRECTORY_PATH "/profilingf0_mine_sweeper_profiling.txt"
 
 #define TAG_PROFILER "Mine Sweeper Profiler"
 

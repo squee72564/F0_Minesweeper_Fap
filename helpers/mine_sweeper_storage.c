@@ -13,14 +13,34 @@ static void mine_sweeper_profiler_close_storage() {
 Stream* open_profiling_file() {
 
     Storage* storage = mine_sweeper_profiler_open_storage();
+	
+	
+    // Overwrite wont work, so delete first
+    if(storage_file_exists(storage, PROFILING_FILE_SAVE_PATH)) {
+        storage_simply_remove(storage, PROFILING_FILE_SAVE_PATH);
+    }
+
+    // Open File, create if not exists
+    if(!storage_common_stat(storage, PROFILING_FILE_SAVE_PATH, NULL) == FSE_OK) {
+        FURI_LOG_I(TAG, "Config file %s is not found. Will create new.", PROFILING_FILE_SAVE_PATH);
+        if(storage_common_stat(storage, PROFILING_FILE_DIRECTORY_PATH, NULL) == FSE_NOT_EXIST) {
+            FURI_LOG_I(
+                TAG,
+                "Directory %s doesn't exist. Will create new.",
+                PROFILING_FILE_DIRECTORY_PATH);
+            if(!storage_simply_mkdir(storage, PROFILING_FILE_DIRECTORY_PATH)) {
+                FURI_LOG_E(TAG, "Error creating directory %s", PROFILING_FILE_DIRECTORY_PATH);
+            }
+        }
+    }
 
     Stream* file_stream = file_stream_alloc(storage);
 
     FS_Error err;
 
-    if (!file_stream_open(file_stream, PROFILING_FILE_DIRECTORY_PATH, FSAM_WRITE, FSOM_OPEN_APPEND) ) {
+    if (!file_stream_open(file_stream, PROFILING_FILE_SAVE_PATH, FSAM_WRITE, FSOM_OPEN_APPEND) ) {
         err = file_stream_get_error(file_stream);
-        FURI_LOG_E(TAG_PROFILER, "Error opening file: %s", filesystem_api_error_get_desc(err));
+        FURI_LOG_E(TAG_PROFILER, "Error opening file %s: %s",PROFILING_FILE_SAVE_PATH, filesystem_api_error_get_desc(err));
         file_stream_close(file_stream);
         return NULL;
     }

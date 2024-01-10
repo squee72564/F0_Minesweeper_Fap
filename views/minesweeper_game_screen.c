@@ -519,6 +519,19 @@ MineSweeperGameScreen* mine_sweeper_game_screen_alloc_and_profile(uint8_t width,
     Stream* fs = open_profiling_file();
 
     if (fs == NULL) {
+
+
+        with_view_model(
+            mine_sweeper_game_screen->view,
+            MineSweeperGameScreenModel * model,
+            {
+                furi_string_free(model->str);
+            },
+            true
+        );
+
+        view_free(mine_sweeper_game_screen->view);
+
         return NULL;
     }
 
