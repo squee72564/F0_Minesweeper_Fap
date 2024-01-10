@@ -511,49 +511,63 @@ MineSweeperGameScreen* mine_sweeper_game_screen_alloc_and_profile(uint8_t width,
     mine_sweeper_game_screen_set_board_information(mine_sweeper_game_screen, width, height, difficulty, ensure_solvable);
 
     size_t memsz = sizeof(MineSweeperTile) * MINESWEEPER_BOARD_MAX_TILES;
-    uint16_t total_iter = iter;
-    uint16_t successes = 0;
 
-    uint32_t start_tick = furi_get_tick();
-
-    do {
-        setup_board(mine_sweeper_game_screen);
-
-        uint16_t num_mines = 1;
-
-        uint16_t board_width = 16; 
-        uint16_t board_height = 7; 
-
-        with_view_model(
-            mine_sweeper_game_screen->view,
-            MineSweeperGameScreenModel * model,
-            {
-                num_mines = model->mines_left;
-                board_width = model->board_width;
-                board_height = model->board_height;
-
-                memset(board_t, 0, memsz);
-                memcpy(board_t, model->board, sizeof(MineSweeperTile) * (board_width * board_height));
-            },
-            true
-        );
+    // LOOP HERE
     
-        if (check_board_with_verifier(board_t, board_width, board_height, num_mines)) successes++;
+    for (int i = width; i < 33; i++) {
+        for (int j = height; j < 33; j++) {
+            for (int k = difficulty; k < 3; k++) {
 
-        iter--;
+                uint32_t it = iter;
+                uint32_t successes = 0;
 
-    } while (iter >= 1);
+                uint32_t start_tick = furi_get_tick();
 
-    uint32_t ticks_elapsed = furi_get_tick() - start_tick;
-    double sec = (double)ticks_elapsed / (double)furi_kernel_get_tick_frequency();
-    double milliseconds = sec * 1000.0L;
-    append_to_profiling_file(
-            fs,
-            "%d,%.05f,%.05f,%.05f\n",
-            total_iter,
-            (double)successes/(double)total_iter,
-            milliseconds,
-            milliseconds/(double)total_iter);
+                do {
+                    setup_board(mine_sweeper_game_screen);
+
+                    uint16_t num_mines = 1;
+
+                    uint16_t board_width = 16; 
+                    uint16_t board_height = 7; 
+
+                    with_view_model(
+                        mine_sweeper_game_screen->view,
+                        MineSweeperGameScreenModel * model,
+                        {
+                            num_mines = model->mines_left;
+                            board_width = model->board_width;
+                            board_height = model->board_height;
+
+                            memset(board_t, 0, memsz);
+                            memcpy(board_t, model->board, sizeof(MineSweeperTile) * (board_width * board_height));
+                        },
+                        true
+                    );
+                
+                    if (check_board_with_verifier(board_t, board_width, board_height, num_mines)) successes++;
+
+                    it--;
+
+                } while (it >= 1);
+
+                uint32_t ticks_elapsed = furi_get_tick() - start_tick;
+                double sec = (double)ticks_elapsed / (double)furi_kernel_get_tick_frequency();
+                append_to_profiling_file(
+                    fs,
+                    "%d,%d,%d,%d,%.05f,%.05f,%.05f\n",
+                    i,
+                    j,
+                    k,
+                    iter,
+                    (double)successes/(double)iter,
+                    sec,
+                    sec/(double)iter);
+
+            }
+
+        }
+    }
 
 
     close_profiling_file(fs);

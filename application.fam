@@ -16,11 +16,11 @@ App(
     fap_icon_assets="images",           # Image assets to compile for this application
     fap_icon="images/minesweeper.png",  # 10x10 1-bit PNG
 
-    fap_category="Games",
+    fap_category="Tools",
    
     # Optional values
     fap_version="0.1",
-    fap_description="Flipper Zero Minesweeper Implementation",
+    fap_description="Flipper Zero Minesweeper Board Verifier Profiler App",
     fap_author="Alexander Rodriguez",
     fap_weburl="https://github.com/squee72564/F0_Minesweeper_Fap",
 )

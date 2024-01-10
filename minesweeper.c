@@ -97,11 +97,11 @@ static void app_free(MineSweeperApp* app) {
 int32_t minesweeper_app(void* p) {
     UNUSED(p);
 
-    uint8_t width = 32;
-    uint8_t height = 32;
+    uint8_t width = 16;
+    uint8_t height = 7;
     uint8_t difficulty = 0;
     bool solvable = true;
-    uint16_t iter = 30000;
+    uint16_t iter = 10000;
 
     Stream* fs = open_profiling_file();
 
@@ -112,7 +112,7 @@ int32_t minesweeper_app(void* p) {
 
     append_to_profiling_file(
             fs,
-            "total_iter,s_rate,run_time(ms),avs(ms)\n");
+            "w,h,d,total_iter,s_rate,run_time(s),avs(s)\n");
 
     MineSweeperApp* app = app_alloc(width, height, difficulty, solvable, iter, fs);
 
