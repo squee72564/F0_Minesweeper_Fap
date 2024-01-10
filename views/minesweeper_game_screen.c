@@ -312,9 +312,11 @@ static bool check_board_with_verifier(
     Point start_pos = (Point){.x = 0, .y = 0};
     pointobj_set_point(pos, start_pos);
 
-    // Initially bfs clear from 0,0 as it is safe. We should push all 'edges' found
-    // into the deq and this will be where we start off from
+    // Try bfs clear from all corners as they are safe
     bfs_tile_clear_verifier(board, board_width, board_height, 0, 0, &deq, &visited);
+    //bfs_tile_clear_verifier(board, board_width, board_height, 0, board_width-1, &deq, &visited);
+    //bfs_tile_clear_verifier(board, board_width, board_height, board_height-1, 0, &deq, &visited);
+    //bfs_tile_clear_verifier(board, board_width, board_height, board_height-1, board_width-1, &deq, &visited);
                                                              
     //While we have valid edges to check and have not solved the board
     while (!is_solvable && point_deq_size(deq) > 0) {
