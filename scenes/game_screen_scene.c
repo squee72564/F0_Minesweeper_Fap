@@ -19,13 +19,9 @@ bool minesweeper_scene_game_screen_on_event(void* context, SceneManagerEvent eve
 
     MineSweeperApp* app = context;
     bool consumed = false;
+    UNUSED(app);
+    UNUSED(event);
 
-    // No custom scene events from mine sweeper view
-    // Just check for back button to route to next screen
-    if (event.type == SceneManagerEventTypeBack) {
-        scene_manager_next_scene(app->scene_manager, MineSweeperSceneMenuScreen);
-        consumed = true;
-    }
 
     return consumed;
 }
