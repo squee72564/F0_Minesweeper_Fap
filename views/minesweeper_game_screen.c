@@ -1419,7 +1419,8 @@ static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, 
                 uint32_t tick_frequency = furi_kernel_get_tick_frequency();
                 double setup_ms = ((double)setup_ticks_elapsed / (double)tick_frequency) * 1000.0L;
 
-                FURI_LOG_E(MS_DEBUG_TAG, "Board setup took %.4fms.", setup_ms);
+                FURI_LOG_E(MS_DEBUG_TAG, "Board setup took %.4fms with %hhd, %hhd, %hhd",
+                        setup_ms, model->board_width, model->board_height, model->board_difficulty);
 
                 consumed = true;
 
@@ -1642,7 +1643,7 @@ MineSweeperGameScreen* mine_sweeper_game_screen_alloc(uint8_t width, uint8_t hei
     double alloc_ms = ((double)alloc_ticks_elapsed / (double)tick_frequency) * 1000.0L;
     double setup_ms = ((double)setup_ticks_elapsed / (double)tick_frequency) * 1000.0L;
 
-    FURI_LOG_E(MS_DEBUG_TAG, "Board setup took %.4fms.", setup_ms);
+    FURI_LOG_E(MS_DEBUG_TAG, "Board setup took %.4fms with %hhd, %hhd, %hhd", setup_ms, width, height, difficulty);
     FURI_LOG_E(MS_DEBUG_TAG, "App alloc took %.4fms total.", alloc_ms);
  
     return mine_sweeper_game_screen;
@@ -1720,7 +1721,7 @@ void mine_sweeper_game_screen_reset(MineSweeperGameScreen* instance, uint8_t wid
     uint32_t tick_frequency = furi_kernel_get_tick_frequency();
     double setup_ms = ((double)setup_ticks_elapsed / (double)tick_frequency) * 1000.0L;
 
-    FURI_LOG_E(MS_DEBUG_TAG, "Board setup took %.4fms.", setup_ms);
+    FURI_LOG_E(MS_DEBUG_TAG, "Board setup took %.4fms with %hhd, %hhd, %hhd", setup_ms, width, height, difficulty);
 
 }
 
