@@ -15,6 +15,8 @@
 
 #include "views/minesweeper_game_screen.h"
 #include "scenes/minesweeper_scene.h"
+#include "helpers/mine_sweeper_storage.h"
+#include "helpers/mine_sweeper_led.h"
 
 #define TAG "Mine Sweeper Application"
 

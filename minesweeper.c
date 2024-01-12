@@ -27,8 +27,6 @@ static MineSweeperApp* app_alloc(uint16_t w, uint16_t h, uint8_t d, bool solvabl
     // Turn backlight on when app starts
     notification_message(notification_app, &sequence_display_backlight_on);
 
-    furi_record_close(RECORD_NOTIFICATION);
-
     // Alloc Scene Manager and set handlers for on_enter, on_event, on_exit 
     app->scene_manager = scene_manager_alloc(&minesweeper_scene_handlers, app);
     
@@ -41,6 +39,7 @@ static MineSweeperApp* app_alloc(uint16_t w, uint16_t h, uint8_t d, bool solvabl
     view_dispatcher_set_navigation_event_callback(app->view_dispatcher, minesweeper_navigation_event_callback);
     view_dispatcher_set_tick_event_callback(app->view_dispatcher, minesweeper_tick_event_callback, 500);
 
+    mine_sweeper_led_set_rgb(app, notification_app, 255, 0, 255);
 
     app->game_screen = mine_sweeper_game_screen_alloc_and_profile(
             w,
@@ -50,7 +49,12 @@ static MineSweeperApp* app_alloc(uint16_t w, uint16_t h, uint8_t d, bool solvabl
             iter,
             fs);
 
+    mine_sweeper_led_reset(app, notification_app);
+
+    furi_record_close(RECORD_NOTIFICATION);
+
     if (app->game_screen == NULL) {
+        FURI_LOG_E(TAG, "GAME GREEN NULL");
         // Free View Dispatcher and Scene Manager
         scene_manager_free(app->scene_manager);
         view_dispatcher_free(app->view_dispatcher);
@@ -58,6 +62,7 @@ static MineSweeperApp* app_alloc(uint16_t w, uint16_t h, uint8_t d, bool solvabl
         return NULL;
 
     }
+
 
     view_dispatcher_add_view(
         app->view_dispatcher,
@@ -114,20 +119,23 @@ int32_t minesweeper_app(void* p) {
             fs,
             "w,h,d,total_iter,s_rate,run_time(s),avs(s)\n");
 
+
+    FURI_LOG_D(TAG, "Starting with w:%d, h:%d, d:%d, s:%d, i:%d", width, height, difficulty, solvable, iter);
     MineSweeperApp* app = app_alloc(width, height, difficulty, solvable, iter, fs);
 
     if (app == NULL) {
+        FURI_LOG_D(TAG, "Returning with error 1");
         return 1;
     }
-
-
+    
+    
     // This will be the initial scene on app startup
     scene_manager_next_scene(app->scene_manager, MineSweeperSceneGameScreen);
 
     view_dispatcher_run(app->view_dispatcher);
 
     app_free(app);
-    //FURI_LOG_I(TAG, "Mine Sweeper app freed");
+    FURI_LOG_I(TAG, "Mine Sweeper app freed");
 
     return 0;
 }
