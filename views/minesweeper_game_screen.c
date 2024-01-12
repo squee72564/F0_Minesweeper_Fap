@@ -983,12 +983,21 @@ static int8_t handle_short_ok_input(MineSweeperGameScreen* instance, MineSweeper
 
     } else if (state == MineSweeperGameScreenTileStateUncleared) {
 
+        uint32_t bfs_start_tick = furi_get_tick();
+
         uint16_t tiles_cleared = bfs_tile_clear(
                                     model->board,
                                     model->board_width,
                                     model->board_height,
                                     (uint16_t)model->curr_pos.x_abs,
                                     (uint16_t)model->curr_pos.y_abs);
+
+        uint32_t end_tick = furi_get_tick(); 
+        uint32_t bfs_ticks_elapsed = end_tick - bfs_start_tick; 
+        uint32_t tick_frequency = furi_kernel_get_tick_frequency();
+        double bfs_ms = ((double)bfs_ticks_elapsed / (double)tick_frequency) * 1000.0L;
+
+        FURI_LOG_E(MS_DEBUG_TAG, "Bfs tile clear took %.4fms.", bfs_ms);
 
         model->tiles_left -= tiles_cleared;
 
@@ -1020,8 +1029,19 @@ static int8_t handle_long_ok_input(MineSweeperGameScreen* instance, MineSweeperG
 
     MineSweeperGameScreenTileType type = model->board[curr_pos_1d].tile_type;
 
+
+    uint32_t bfs_start_tick = furi_get_tick();
+
     // Try to clear surrounding tiles if correct number is flagged.
     is_lose_condition_triggered = try_clear_surrounding_tiles(model);
+
+    uint32_t end_tick = furi_get_tick(); 
+    uint32_t bfs_ticks_elapsed = end_tick - bfs_start_tick; 
+    uint32_t tick_frequency = furi_kernel_get_tick_frequency();
+    double bfs_ms = ((double)bfs_ticks_elapsed / (double)tick_frequency) * 1000.0L;
+
+    FURI_LOG_E(MS_DEBUG_TAG, "Try clear surrounding tiles took %.4fms.", bfs_ms);
+
     model->is_holding_down_button = true;
 
     // Check win condition
@@ -1370,11 +1390,15 @@ static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, 
                         instance->view,
                         mine_sweeper_game_screen_view_play_input_callback);
 
+                FURI_LOG_E(MS_DEBUG_TAG, "Restarting game and generating board - WARNING: VIEW MAY LOCK UP");
+                
                 // Here we are going to generate a valid map for the player 
                 bool is_valid_board = false;
 
                 size_t memsz = sizeof(MineSweeperTile) * MINESWEEPER_BOARD_MAX_TILES;
 
+                uint32_t setup_board_start_tick = furi_get_tick();
+                
                 do {
                     setup_board(instance);
 
@@ -1389,6 +1413,13 @@ static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, 
                 
 
                 } while (model->ensure_solvable_board && !is_valid_board);
+
+                uint32_t end_tick = furi_get_tick(); 
+                uint32_t setup_ticks_elapsed = end_tick - setup_board_start_tick; 
+                uint32_t tick_frequency = furi_kernel_get_tick_frequency();
+                double setup_ms = ((double)setup_ticks_elapsed / (double)tick_frequency) * 1000.0L;
+
+                FURI_LOG_E(MS_DEBUG_TAG, "Board setup took %.4fms.", setup_ms);
 
                 consumed = true;
 
@@ -1411,7 +1442,6 @@ static bool mine_sweeper_game_screen_view_play_input_callback(InputEvent* event,
 
     MineSweeperGameScreen* instance = context;
     bool consumed = false;
-
 
     with_view_model(
         instance->view,
@@ -1487,8 +1517,17 @@ static bool mine_sweeper_game_screen_view_play_input_callback(InputEvent* event,
 
                     if (state == MineSweeperGameScreenTileStateCleared) {
 
+                        uint32_t bfs_start_tick = furi_get_tick();
+
                         // BFS to closest uncovered position
                         bfs_to_closest_tile(instance, model);
+
+                        uint32_t end_tick = furi_get_tick(); 
+                        uint32_t bfs_ticks_elapsed = end_tick - bfs_start_tick; 
+                        uint32_t tick_frequency = furi_kernel_get_tick_frequency();
+                        double bfs_ms = ((double)bfs_ticks_elapsed / (double)tick_frequency) * 1000.0L;
+
+                        FURI_LOG_E(MS_DEBUG_TAG, "BFS jump took %.4fms.", bfs_ms);
 
                         model->is_holding_down_button = true;
 
@@ -1520,15 +1559,15 @@ static bool mine_sweeper_game_screen_view_play_input_callback(InputEvent* event,
         true
     );
     
-
-    if (!consumed && instance->input_callback != NULL) {
-        consumed = instance->input_callback(event, instance->context);
-    }
-
     return consumed;
 }
 
 MineSweeperGameScreen* mine_sweeper_game_screen_alloc(uint8_t width, uint8_t height, uint8_t difficulty, bool ensure_solvable) {
+      
+    FURI_LOG_E(MS_DEBUG_TAG, "Starting mine sweeper alloc function.");
+
+    uint32_t alloc_start_tick = furi_get_tick();
+
     MineSweeperGameScreen* mine_sweeper_game_screen = (MineSweeperGameScreen*)malloc(sizeof(MineSweeperGameScreen));
     
     mine_sweeper_game_screen->view = view_alloc();
@@ -1568,6 +1607,8 @@ MineSweeperGameScreen* mine_sweeper_game_screen_alloc(uint8_t width, uint8_t hei
     bool is_valid_board = false;
     size_t memsz = sizeof(MineSweeperTile) * MINESWEEPER_BOARD_MAX_TILES;
 
+    uint32_t setup_board_start_tick = furi_get_tick();
+
     do {
         setup_board(mine_sweeper_game_screen);
 
@@ -1594,6 +1635,16 @@ MineSweeperGameScreen* mine_sweeper_game_screen_alloc(uint8_t width, uint8_t hei
 
     } while (ensure_solvable && !is_valid_board);
 
+    uint32_t end_tick = furi_get_tick(); 
+    uint32_t alloc_ticks_elapsed = end_tick - alloc_start_tick;
+    uint32_t setup_ticks_elapsed = end_tick - setup_board_start_tick; 
+    uint32_t tick_frequency = furi_kernel_get_tick_frequency();
+    double alloc_ms = ((double)alloc_ticks_elapsed / (double)tick_frequency) * 1000.0L;
+    double setup_ms = ((double)setup_ticks_elapsed / (double)tick_frequency) * 1000.0L;
+
+    FURI_LOG_E(MS_DEBUG_TAG, "Board setup took %.4fms.", setup_ms);
+    FURI_LOG_E(MS_DEBUG_TAG, "App alloc took %.4fms total.", alloc_ms);
+ 
     return mine_sweeper_game_screen;
 }
 
@@ -1619,6 +1670,8 @@ void mine_sweeper_game_screen_free(MineSweeperGameScreen* instance) {
 // This should NOT be called in the on_exit in the game scene
 void mine_sweeper_game_screen_reset(MineSweeperGameScreen* instance, uint8_t width, uint8_t height, uint8_t difficulty, bool ensure_solvable) {
     furi_assert(instance);
+
+    FURI_LOG_E(MS_DEBUG_TAG, "Starting mine sweeper reset function.");
     
     instance->input_callback = NULL;
     
@@ -1633,6 +1686,8 @@ void mine_sweeper_game_screen_reset(MineSweeperGameScreen* instance, uint8_t wid
     // Here we are going to generate a valid map for the player 
     bool is_valid_board = false;
     size_t memsz = sizeof(MineSweeperTile) * MINESWEEPER_BOARD_MAX_TILES;
+
+    uint32_t setup_board_start_tick = furi_get_tick();
 
     do {
         setup_board(instance);
@@ -1659,6 +1714,13 @@ void mine_sweeper_game_screen_reset(MineSweeperGameScreen* instance, uint8_t wid
         is_valid_board = check_board_with_verifier(board_t, board_width, board_height, num_mines);
 
     } while (ensure_solvable && !is_valid_board);
+
+    uint32_t end_tick = furi_get_tick(); 
+    uint32_t setup_ticks_elapsed = end_tick - setup_board_start_tick; 
+    uint32_t tick_frequency = furi_kernel_get_tick_frequency();
+    double setup_ms = ((double)setup_ticks_elapsed / (double)tick_frequency) * 1000.0L;
+
+    FURI_LOG_E(MS_DEBUG_TAG, "Board setup took %.4fms.", setup_ms);
 
 }
 
