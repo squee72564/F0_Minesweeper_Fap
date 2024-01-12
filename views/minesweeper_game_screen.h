@@ -14,7 +14,7 @@
 #include <furi.h>
 #include <furi_hal.h>
 
-#include "minesweeper_redux_icons.h"
+#include "minesweeper_redux_profiler1_icons.h"
 #include "minesweeper_game_screen_i.h"
 #include "../helpers/mine_sweeper_haptic.h"
 #include "../helpers/mine_sweeper_led.h"

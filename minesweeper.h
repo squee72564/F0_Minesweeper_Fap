@@ -22,7 +22,7 @@
 #include "views/start_screen.h"
 #include "views/minesweeper_game_screen.h"
 #include "helpers/mine_sweeper_storage.h"
-#include "minesweeper_redux_icons.h"
+#include "minesweeper_redux_profiler1_icons.h"
 
 #define TAG "Mine Sweeper Application"
 
