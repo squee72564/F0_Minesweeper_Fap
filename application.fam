@@ -1,8 +1,8 @@
 # For details & more options, see documentation/AppManifests.md in firmware repo
 
 App(
-    appid="f0_minesweeper_aer72564_profiler",    # Must be unique
-    name="Mine Sweeper Profiler",                # Displayed in menus
+    appid="minesweeper_redux_profiler2",    # Must be unique
+    name="MS Redux Prof2",                # Displayed in menus
     apptype=FlipperAppType.EXTERNAL,
     entry_point="minesweeper_app",
     cdefines=["APP_MINESWEEPER"],
