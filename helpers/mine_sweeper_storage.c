@@ -57,7 +57,8 @@ void mine_sweeper_save_settings(void* context) {
              h =  app->settings_info.board_height,
              d =  app->settings_info.difficulty,
              f =  app->feedback_enabled,
-             wr = app->wrap_enabled;
+             wr = app->wrap_enabled,
+             s =  app->ensure_map_solvable ? 1 : 0;
 
     flipper_format_write_uint32(
         fff_file, MINESWEEPER_SETTINGS_KEY_WIDTH, &w, 1);
@@ -69,6 +70,8 @@ void mine_sweeper_save_settings(void* context) {
         fff_file, MINESWEEPER_SETTINGS_KEY_FEEDBACK, &f, 1);
     flipper_format_write_uint32(
         fff_file, MINESWEEPER_SETTINGS_KEY_WRAP, &wr, 1);
+    flipper_format_write_uint32(
+        fff_file, MINESWEEPER_SETTINGS_KEY_SOLVABLE, &s, 1);
     
     if(!flipper_format_rewind(fff_file)) {
         FURI_LOG_E(TAG, "Rewind error");
@@ -120,24 +123,27 @@ bool mine_sweeper_read_settings(void* context) {
         return false;
     }
 
-    uint32_t w = 7, h = 16, d = 0, f = 1, wr = 1;
+    uint32_t w = 7, h = 16, d = 0, f = 1, wr = 1, s = 0;
     flipper_format_read_uint32(fff_file, MINESWEEPER_SETTINGS_KEY_WIDTH, &w, 1);
     flipper_format_read_uint32(fff_file, MINESWEEPER_SETTINGS_KEY_HEIGHT, &h, 1);
     flipper_format_read_uint32(fff_file, MINESWEEPER_SETTINGS_KEY_DIFFICULTY, &d, 1);
     flipper_format_read_uint32(fff_file, MINESWEEPER_SETTINGS_KEY_FEEDBACK, &f, 1);
     flipper_format_read_uint32(fff_file, MINESWEEPER_SETTINGS_KEY_WRAP, &wr, 1);
+    flipper_format_read_uint32(fff_file, MINESWEEPER_SETTINGS_KEY_SOLVABLE, &s, 1);
 
     w  = clamp(16, 32, w);
     h  = clamp(7, 32, h);
     d  = clamp(0, 2, d);
     f  = clamp(0, 1, f);
     wr = clamp(0, 1, wr);
+    s  = clamp(0, 1, s);
 
     app->settings_info.board_width = (uint8_t) w;
     app->settings_info.board_height = (uint8_t) h;
     app->settings_info.difficulty = (uint8_t) d;
     app->feedback_enabled = (uint8_t) f;
     app->wrap_enabled = (uint8_t) wr;
+    app->ensure_map_solvable = s == 1 ? true : false;
 
     flipper_format_rewind(fff_file);
 
