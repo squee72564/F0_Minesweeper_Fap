@@ -146,6 +146,10 @@ static void mine_sweeper_game_screen_view_exit(void* context);
 // Different input/draw callbacks for play/win/lose state
 static void mine_sweeper_game_screen_view_end_draw_callback(Canvas* canvas, void* _model);
 static void mine_sweeper_game_screen_view_play_draw_callback(Canvas* canvas, void* _model);
+static void mine_sweeper_game_screen_view_loading_draw_callback(Canvas* canvas, void* _model);
+
+static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, void* context);
+static bool mine_sweeper_game_screen_view_loading_input_callback(InputEvent* event, void* context);
 
 // These consolidate the function calls for led/haptic/sound for specific events
 static void mine_sweeper_long_ok_effect(void* context);
@@ -167,8 +171,6 @@ static int8_t handle_short_ok_input(MineSweeperGameScreen* instance, MineSweeper
 static int8_t handle_long_ok_input(MineSweeperGameScreen* instance, MineSweeperGameScreenModel* model);
 static bool handle_long_back_flag_input(MineSweeperGameScreen* instance, MineSweeperGameScreenModel* model);
 
-static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, void* context);
-static bool mine_sweeper_game_screen_view_play_input_callback(InputEvent* event, void* context);
 
 
 /**************************************************************
@@ -1376,6 +1378,44 @@ static void mine_sweeper_game_screen_view_play_draw_callback(Canvas* canvas, voi
 
 }
 
+static void mine_sweeper_game_screen_view_loading_draw_callback(Canvas* canvas, void* _model) {
+    furi_assert(canvas);
+    furi_assert(_model);
+
+    MineSweeperGameScreenModel* model = _model;
+
+    canvas_clear(canvas);
+
+    
+    for (uint8_t x_rel = 0; x_rel < MINESWEEPER_SCREEN_TILE_HEIGHT; x_rel++) {
+        for (uint8_t y_rel = 0; y_rel < MINESWEEPER_SCREEN_TILE_WIDTH; y_rel++) {
+            canvas_draw_icon(
+                canvas,
+                y_rel * icon_get_width(tile_icons[12]),
+                x_rel * icon_get_height(tile_icons[12]),
+                tile_icons[12]);
+        }
+    }
+
+    canvas_set_color(canvas, ColorBlack);
+    canvas_draw_line(canvas, 127,0,127,63-8);
+    canvas_draw_line(canvas, 0,0,0,63-8);
+    canvas_draw_line(canvas, 0,63-8,127,63-8);
+    canvas_draw_line(canvas, 0,0,127,0);
+
+    furi_string_printf(
+            model->info_str,
+            "Loading Board...");
+
+    canvas_draw_str_aligned(
+            canvas,
+            33,
+            64-7,
+            AlignLeft,
+            AlignTop,
+            furi_string_get_cstr(model->info_str));
+}
+
 static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, void* context) {
     furi_assert(context);
     furi_assert(event);
@@ -1407,11 +1447,10 @@ static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, 
 
                 mine_sweeper_led_reset(instance->context);
                 
-                mine_sweeper_game_screen_reset(instance,
-                                               model->board_width,
-                                               model->board_height,
-                                               model->board_difficulty,
-                                               model->ensure_solvable_board);
+		// Set to loading screen callbacks
+        	view_set_draw_callback(instance->view, mine_sweeper_game_screen_view_loading_draw_callback);
+                view_set_input_callback(instance->view, mine_sweeper_game_screen_view_loading_input_callback);
+
 
                 consumed = true;
 
@@ -1424,6 +1463,29 @@ static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, 
         },
         false
     );
+
+    return consumed;
+}
+
+static bool mine_sweeper_game_screen_view_loading_input_callback(InputEvent* event, void* context) {
+    furi_assert(context);
+    furi_assert(event);
+
+    MineSweeperGameScreen* instance = context;
+    bool consumed = false;
+
+    with_view_model(
+        instance->view,
+        MineSweeperGameScreenModel * model,
+        {
+	    mine_sweeper_game_screen_reset(
+		instance,
+		model->board_width,
+		model->board_height,
+		model->board_difficulty,
+		model->ensure_solvable_board);
+	    },
+    true);
 
     return consumed;
 }
@@ -1553,8 +1615,8 @@ MineSweeperGameScreen* mine_sweeper_game_screen_alloc(uint8_t width,
     view_set_context(mine_sweeper_game_screen->view, mine_sweeper_game_screen);
     view_allocate_model(mine_sweeper_game_screen->view, ViewModelTypeLocking, sizeof(MineSweeperGameScreenModel));
 
-    view_set_draw_callback(mine_sweeper_game_screen->view, mine_sweeper_game_screen_view_play_draw_callback);
-    view_set_input_callback(mine_sweeper_game_screen->view, mine_sweeper_game_screen_view_play_input_callback);
+    view_set_draw_callback(mine_sweeper_game_screen->view, mine_sweeper_game_screen_view_loading_draw_callback);
+    view_set_input_callback(mine_sweeper_game_screen->view, mine_sweeper_game_screen_view_loading_input_callback);
     
     // This are currently unused
     view_set_enter_callback(mine_sweeper_game_screen->view, mine_sweeper_game_screen_view_enter);
