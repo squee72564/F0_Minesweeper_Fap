@@ -674,10 +674,13 @@ static bool try_clear_surrounding_tiles(MineSweeperGameScreenModel* model) {
 
     MineSweeperTile tile = model->board[curr_pos_1d];
 
-    // Return false if tile is zero tile or not cleared
-    if (tile.tile_state != MineSweeperGameScreenTileStateCleared || tile.tile_type == MineSweeperGameScreenTileZero) {
+    // Chord-clear is valid only on revealed number tiles.
+    if (tile.tile_state != MineSweeperGameScreenTileStateCleared ||
+        !mine_sweeper_tile_type_is_number(tile.tile_type)) {
         return false;
     }
+
+    uint8_t tile_num = (uint8_t)tile.tile_type - (uint8_t)MineSweeperGameScreenTileZero;
 
     uint8_t num_surrounding_flagged = 0;
     bool was_mine_found = false;
@@ -702,7 +705,7 @@ static bool try_clear_surrounding_tiles(MineSweeperGameScreenModel* model) {
     }
 
     // We clear surrounding tile
-    if (num_surrounding_flagged >= tile.tile_type-1) {
+    if (num_surrounding_flagged == tile_num) {
         if (was_mine_found) is_lose_condition_triggered = true;
 
 
