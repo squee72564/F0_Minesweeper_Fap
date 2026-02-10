@@ -203,6 +203,11 @@ void start_screen_reset(StartScreen* instance) {
         instance->view,
         StartScreenModel * model,
         {
+            if (model->icon.animation != NULL) {
+                icon_animation_stop(model->icon.animation);
+                icon_animation_free(model->icon.animation);
+                model->icon.animation = NULL;
+            }
             memset(&model->text1, 0, sizeof(model->text1));
             memset(&model->text2, 0, sizeof(model->text2));
             memset(&model->text3, 0, sizeof(model->text3));
@@ -321,10 +326,19 @@ void start_screen_set_icon_animation(
         instance->view,
         StartScreenModel * model,
         {
+            if (model->icon.animation != NULL) {
+                icon_animation_stop(model->icon.animation);
+                icon_animation_free(model->icon.animation);
+                model->icon.animation = NULL;
+            }
+
             model->icon.x = x;
             model->icon.y = y;
-            model->icon.animation = icon_animation_alloc(animation);
-            view_tie_icon_animation(instance->view, model->icon.animation);
+
+            if (animation != NULL) {
+                model->icon.animation = icon_animation_alloc(animation);
+                view_tie_icon_animation(instance->view, model->icon.animation);
+            }
         },
         true);
 }
