@@ -38,6 +38,10 @@ typedef enum {
     MineSweeperGameScreenTileStateCleared,
 } MineSweeperGameScreenTileState;
 
+static inline bool mine_sweeper_tile_type_is_number(MineSweeperGameScreenTileType type) {
+    return type >= MineSweeperGameScreenTileOne && type <= MineSweeperGameScreenTileEight;
+}
+
 struct MineSweeperGameScreen {
     View* view;
     void* context;
@@ -345,7 +349,11 @@ static bool check_board_with_verifier(
 
             // Get tile at 1d position
             MineSweeperTile tile = board[curr_pos_1d];
-            uint8_t tile_num = tile.tile_type - 1;
+            if (!mine_sweeper_tile_type_is_number(tile.tile_type)) {
+                continue;
+            }
+
+            uint8_t tile_num = (uint8_t)tile.tile_type - (uint8_t)MineSweeperGameScreenTileZero;
             
             // Track total surrounding tiles and flagged tiles
             uint8_t num_surrounding_tiles = 0;
@@ -493,13 +501,20 @@ static void bfs_tile_clear_verifier(
         board[curr_pos_1d].tile_state = MineSweeperGameScreenTileStateCleared;
         
 
-        // When we hit a potential edge
-        if (board[curr_pos_1d].tile_type != MineSweeperGameScreenTileZero) {
+        MineSweeperGameScreenTileType curr_type = board[curr_pos_1d].tile_type;
+
+        // Only numbered tiles are valid deduction edges for the verifier.
+        if (mine_sweeper_tile_type_is_number(curr_type)) {
 
             // Add to our passed in deq of edges
             point_deq_push_back(*edges, pos);
 
             // Continue processing next point for bfs tile clear
+            continue;
+        }
+
+        // Non-zero, non-number tiles (e.g. mine/none) are not valid bfs expansion points.
+        if (curr_type != MineSweeperGameScreenTileZero) {
             continue;
         }
 
