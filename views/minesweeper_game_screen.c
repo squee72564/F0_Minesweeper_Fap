@@ -1445,6 +1445,11 @@ static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, 
 
     MineSweeperGameScreen* instance = context;
     bool consumed = false;
+    bool should_reset = false;
+    uint8_t reset_width = 0;
+    uint8_t reset_height = 0;
+    uint8_t reset_difficulty = 0;
+    bool reset_ensure_solvable = false;
 
     with_view_model(
         instance->view,
@@ -1466,15 +1471,12 @@ static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, 
                 consumed = true;
 
             } else if (!model->is_holding_down_button && model->is_restart_triggered && event->key == InputKeyOk) {
-                // After restart flagged is triggered this should also trigger and restart the game
-
-                mine_sweeper_led_reset(instance->context);
-                
-                mine_sweeper_game_screen_reset(instance,
-                                               model->board_width,
-                                               model->board_height,
-                                               model->board_difficulty,
-                                               model->ensure_solvable_board);
+                // Trigger reset outside this with_view_model() scope to avoid nested model locking.
+                should_reset = true;
+                reset_width = model->board_width;
+                reset_height = model->board_height;
+                reset_difficulty = model->board_difficulty;
+                reset_ensure_solvable = model->ensure_solvable_board;
 
                 consumed = true;
 
@@ -1487,6 +1489,16 @@ static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, 
         },
         false
     );
+
+    if (should_reset) {
+        mine_sweeper_led_reset(instance->context);
+        mine_sweeper_game_screen_reset(
+            instance,
+            reset_width,
+            reset_height,
+            reset_difficulty,
+            reset_ensure_solvable);
+    }
 
     return consumed;
 }
