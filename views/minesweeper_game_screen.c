@@ -132,6 +132,8 @@ static uint16_t bfs_tile_clear(MineSweeperTile* board,
         const uint16_t x,
         const uint16_t y);
 
+static void mine_sweeper_game_screen_normalize_board_size(uint8_t* width, uint8_t* height);
+
 static void mine_sweeper_game_screen_set_board_information(
         MineSweeperGameScreen* instance,
         const uint8_t width,
@@ -200,6 +202,8 @@ static void setup_board(MineSweeperGameScreen* instance) {
         },
         false
     );
+
+    furi_assert(board_tile_count <= MINESWEEPER_BOARD_MAX_TILES);
 
     uint16_t num_mines = board_tile_count * difficulty_multiplier[ board_difficulty ];
 
@@ -632,6 +636,38 @@ static uint16_t bfs_tile_clear(
     return ret;
 }
 
+static void mine_sweeper_game_screen_normalize_board_size(uint8_t* width, uint8_t* height) {
+    furi_assert(width);
+    furi_assert(height);
+
+    const uint8_t min_width = MINESWEEPER_SCREEN_TILE_WIDTH;
+    const uint8_t min_height = MINESWEEPER_SCREEN_TILE_HEIGHT;
+    const uint8_t max_width = MINESWEEPER_BOARD_MAX_TILES / min_height;
+    const uint8_t max_height = MINESWEEPER_BOARD_MAX_TILES / min_width;
+
+    if (*width < min_width) {
+        *width = min_width;
+    } else if (*width > max_width) {
+        *width = max_width;
+    }
+
+    if (*height < min_height) {
+        *height = min_height;
+    } else if (*height > max_height) {
+        *height = max_height;
+    }
+
+    while (((uint16_t)(*width) * (uint16_t)(*height)) > MINESWEEPER_BOARD_MAX_TILES) {
+        if (*width >= *height && *width > min_width) {
+            (*width)--;
+        } else if (*height > min_height) {
+            (*height)--;
+        } else {
+            break;
+        }
+    }
+}
+
 static void mine_sweeper_game_screen_set_board_information(
         MineSweeperGameScreen* instance,
         uint8_t width,
@@ -641,12 +677,10 @@ static void mine_sweeper_game_screen_set_board_information(
 
     furi_assert(instance);
 
-    // These are the min/max values that can actually be set
-    if (width  > 146) {width = 146;}
-    if (width  < 16 ) {width = 16;}
-    if (height > 64 ) {height = 64;}
-    if (height < 7  ) {height = 7;}
-    if (difficulty > 2 ) {difficulty = 2;}
+    mine_sweeper_game_screen_normalize_board_size(&width, &height);
+    if (difficulty > 2) {
+        difficulty = 2;
+    }
     
     with_view_model(
         instance->view,
@@ -1644,6 +1678,7 @@ void mine_sweeper_game_screen_reset(MineSweeperGameScreen* instance, uint8_t wid
         setup_board(instance);
 
         uint16_t num_mines = 1;
+        uint16_t board_tile_count = 0;
 
         uint16_t board_width = 16; //default values
         uint16_t board_height = 7; //default values
@@ -1655,9 +1690,11 @@ void mine_sweeper_game_screen_reset(MineSweeperGameScreen* instance, uint8_t wid
                 num_mines = model->mines_left;
                 board_width = model->board_width;
                 board_height = model->board_height;
+                board_tile_count = board_width * board_height;
+                furi_assert(board_tile_count <= MINESWEEPER_BOARD_MAX_TILES);
 
                 memset(board_t, 0, memsz);
-                memcpy(board_t, model->board, sizeof(MineSweeperTile) * (board_width * board_height));
+                memcpy(board_t, model->board, sizeof(MineSweeperTile) * board_tile_count);
             },
             true
         );
