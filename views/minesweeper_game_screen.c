@@ -1487,7 +1487,7 @@ static bool mine_sweeper_game_screen_view_end_input_callback(InputEvent* event, 
             }
 
         },
-        false
+        true
     );
 
     if (should_reset) {
