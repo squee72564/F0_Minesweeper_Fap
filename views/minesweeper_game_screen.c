@@ -478,9 +478,11 @@ static void bfs_tile_clear_verifier(
         Point curr_pos = pointobj_get_point(pos);
         uint16_t curr_pos_1d = curr_pos.x * board_width + curr_pos.y;
         
-        // If in visited set or it is cleared continue
+        // If in visited set, already cleared, or flagged continue.
+        // Verifier must not clear flagged tiles.
         if (point_set_cget(*visited, pos) != NULL ||
-            board[curr_pos_1d].tile_state == MineSweeperGameScreenTileStateCleared ) {
+            board[curr_pos_1d].tile_state == MineSweeperGameScreenTileStateCleared ||
+            board[curr_pos_1d].tile_state == MineSweeperGameScreenTileStateFlagged) {
             continue;
         } 
 
