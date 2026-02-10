@@ -319,6 +319,7 @@ static bool check_board_with_verifier(
     point_set_init(visited);
 
     bool is_solvable = false;
+    bool has_invalid_flag_deduction = false;
 
     // Point_t pos will be used to keep track of the current point
     Point_t pos;
@@ -333,7 +334,7 @@ static bool check_board_with_verifier(
     bfs_tile_clear_verifier(board, board_width, board_height, 0, 0, &deq, &visited);
                                                              
     //While we have valid edges to check and have not solved the board
-    while (!is_solvable && point_deq_size(deq) > 0) {
+    while (!is_solvable && !has_invalid_flag_deduction && point_deq_size(deq) > 0) {
 
         bool is_stuck = true; // This variable will track if any flag was placed for any edge to see if we are stuck
                               
@@ -402,7 +403,7 @@ static bool check_board_with_verifier(
             } else if (num_surrounding_tiles == tile_num) {
 
                 // If the number of surrounding tiles is the tile num it is unambiguous so we place a flag on those tiles,
-                // decrement the mine count appropriately and check win condition, and then mark stuck as false
+                // decrement the mine count per newly flagged tile and check win condition.
 
                 for (uint8_t j = 0; j < 8; j++) {
                     const int16_t dx = curr_pos.x + (int16_t)offsets[j][0];
@@ -414,11 +415,19 @@ static bool check_board_with_verifier(
 
                     const uint16_t pos_1d = dx * board_width + dy;
                     if (board[pos_1d].tile_state == MineSweeperGameScreenTileStateUncleared) {
+                        if (board[pos_1d].tile_type != MineSweeperGameScreenTileMine || total_mines == 0) {
+                            has_invalid_flag_deduction = true;
+                            break;
+                        }
+
                         board[pos_1d].tile_state = MineSweeperGameScreenTileStateFlagged;
+                        total_mines--;
                     }
                 }
 
-                total_mines -= (num_surrounding_tiles - num_flagged_tiles);
+                if (has_invalid_flag_deduction) {
+                    break;
+                }
 
                 if (total_mines == 0) is_solvable = true;
                  
