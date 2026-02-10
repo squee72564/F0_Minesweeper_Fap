@@ -1,3 +1,6 @@
+## Version 1.6
+Fix: respect global mute/volume by routing game sounds through notification system.
+
 ## Version 1.5
 Added setting to enable/disable wrapping around to the
 other side of the game board when the player moves
