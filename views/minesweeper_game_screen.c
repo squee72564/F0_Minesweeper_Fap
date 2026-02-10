@@ -296,7 +296,7 @@ static void setup_board(MineSweeperGameScreen* instance) {
             model->is_restart_triggered = false;         
             model->has_lost_game = false;
         },
-        true
+        false
     );
 
 }
@@ -691,7 +691,7 @@ static void mine_sweeper_game_screen_set_board_information(
             model->board_difficulty = difficulty;
             model->ensure_solvable_board = is_solvable;
         },
-        true
+        false
     );
 }
 
@@ -1708,7 +1708,7 @@ void mine_sweeper_game_screen_reset(MineSweeperGameScreen* instance, uint8_t wid
                 memset(board_t, 0, memsz);
                 memcpy(board_t, model->board, sizeof(MineSweeperTile) * board_tile_count);
             },
-            true
+            false
         );
     
         if (ensure_solvable) is_valid_board = check_board_with_verifier(board_t, board_width, board_height, num_mines);
