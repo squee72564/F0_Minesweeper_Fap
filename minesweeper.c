@@ -52,6 +52,7 @@ static MineSweeperApp* app_alloc() {
         app->settings_info.board_width = 16;
         app->settings_info.board_height = 7;
         app->settings_info.difficulty = 0;
+        app->settings_info.ensure_solvable_board = false;
         app->feedback_enabled = 1;
         app->wrap_enabled = 1;
 
@@ -75,6 +76,7 @@ static MineSweeperApp* app_alloc() {
             app->settings_info.board_width,
             app->settings_info.board_height,
             app->settings_info.difficulty,
+            // Keep startup generation non-blocking until Stage 3 adds solver retry caps/fallback.
             false,
             app->wrap_enabled);
 
