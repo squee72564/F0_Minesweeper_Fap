@@ -33,8 +33,7 @@ bool minesweeper_scene_game_screen_on_event(void* context, SceneManagerEvent eve
 void minesweeper_scene_game_screen_on_exit(void* context) {
     furi_assert(context);
     MineSweeperApp* app = context;
-    
-    // Do not call reset function for mine sweeper module
-    //unless you want to reset the state of the board
-    UNUSED(app);
+
+    // Do not reset the board on scene exit; only clear scene-owned context.
+    mine_sweeper_game_screen_set_context(app->game_screen, NULL);
 }
