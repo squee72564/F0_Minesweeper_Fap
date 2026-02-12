@@ -72,32 +72,22 @@ static inline void mine_sweeper_haptic_play_if_enabled(
     notification_message(app->notification, sequence);
 }
 
-void mine_sweeper_play_happy_bump(void* context) {
+void mine_sweeper_play_haptic_short(void* context) {
     MineSweeperApp* app = mine_sweeper_haptic_get_app(context);
     mine_sweeper_haptic_play_if_enabled(app, &sequence_minesweeper_haptic_short);
 }
 
-void mine_sweeper_play_long_ok_bump(void* context) {
+void mine_sweeper_play_haptic_double_short(void* context) {
     MineSweeperApp* app = mine_sweeper_haptic_get_app(context);
     mine_sweeper_haptic_play_if_enabled(app, &sequence_minesweeper_haptic_double_short);
 }
 
-void mine_sweeper_play_oob_bump(void* context) {
-    MineSweeperApp* app = mine_sweeper_haptic_get_app(context);
-    mine_sweeper_haptic_play_if_enabled(app, &sequence_minesweeper_haptic_short);
-}
-
-void mine_sweeper_play_wrap_bump(void* context) {
-    MineSweeperApp* app = mine_sweeper_haptic_get_app(context);
-    mine_sweeper_haptic_play_if_enabled(app, &sequence_minesweeper_haptic_short);
-}
-
-void mine_sweeper_play_lose_bump(void* context) {
+void mine_sweeper_play_haptic_lose(void* context) {
     MineSweeperApp* app = mine_sweeper_haptic_get_app(context);
     mine_sweeper_haptic_play_if_enabled(app, &sequence_minesweeper_haptic_lose);
 }
 
-void mine_sweeper_play_win_bump(void* context) {
+void mine_sweeper_play_haptic_win(void* context) {
     MineSweeperApp* app = mine_sweeper_haptic_get_app(context);
     mine_sweeper_haptic_play_if_enabled(app, &sequence_minesweeper_haptic_win);
 }
