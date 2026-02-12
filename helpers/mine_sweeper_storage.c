@@ -56,12 +56,12 @@ static bool mine_sweeper_read_uint32_or_default(
 }
 
 static bool mine_sweeper_write_settings_payload(FlipperFormat* file, const MineSweeperApp* app) {
-    uint32_t w = app->settings_info.board_width;
-    uint32_t h = app->settings_info.board_height;
-    uint32_t d = app->settings_info.difficulty;
+    uint32_t w = app->settings_committed.board_width;
+    uint32_t h = app->settings_committed.board_height;
+    uint32_t d = app->settings_committed.difficulty;
     uint32_t f = app->feedback_enabled;
     uint32_t wr = app->wrap_enabled;
-    uint32_t s = app->settings_info.ensure_solvable_board ? 1U : 0U;
+    uint32_t s = app->settings_committed.ensure_solvable_board ? 1U : 0U;
 
     if(!flipper_format_write_header_cstr(
            file, MINESWEEPER_SETTINGS_HEADER, MINESWEEPER_SETTINGS_FILE_VERSION)) {
@@ -277,10 +277,10 @@ bool mine_sweeper_read_settings(void* context) {
     wr = clamp(0, 1, wr);
     s  = clamp(0, 1, s);
 
-    app->settings_info.board_width = (uint8_t)w;
-    app->settings_info.board_height = (uint8_t)h;
-    app->settings_info.difficulty = (uint8_t)d;
-    app->settings_info.ensure_solvable_board = (s != 0);
+    app->settings_committed.board_width = (uint8_t)w;
+    app->settings_committed.board_height = (uint8_t)h;
+    app->settings_committed.difficulty = (uint8_t)d;
+    app->settings_committed.ensure_solvable_board = (s != 0);
     app->feedback_enabled = (uint8_t)f;
     app->wrap_enabled = (uint8_t)wr;
 

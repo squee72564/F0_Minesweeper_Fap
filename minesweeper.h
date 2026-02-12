@@ -53,11 +53,10 @@ typedef struct MineSweeperApp {
     DialogEx* confirmation_screen;
     TextBox* info_screen;
 
-    MineSweeperAppSettings settings_info;
-    MineSweeperAppSettings t_settings_info;
+    MineSweeperAppSettings settings_committed;
+    MineSweeperAppSettings settings_draft;
 
     uint8_t is_settings_changed;
-    bool ensure_map_solvable;
 
     uint8_t feedback_enabled;
     uint8_t wrap_enabled;
