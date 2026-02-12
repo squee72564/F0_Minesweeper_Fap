@@ -9,13 +9,6 @@ typedef enum {
 } MineSweeperSettingsScreenDifficultyType;
 
 typedef enum {
-    MineSweeperSettingsScreenIndexDifficulty,
-    MineSweeperSettingsScreenIndexWidth,
-    MineSweeperSettingsScreenIndexHeight,
-    MineSweeperSettingsScreenIndexNum,
-} MineSweeperSettingsScreenIndex;
-
-typedef enum {
     MineSweeperSettingsScreenEventDifficultyChange,
     MineSweeperSettingsScreenEventWidthChange,
     MineSweeperSettingsScreenEventHeightChange,
@@ -73,7 +66,7 @@ static void minesweeper_scene_settings_screen_set_width(VariableItem* item) {
 
     variable_item_set_current_value_text(app->t_settings_info.width_item, furi_string_get_cstr(app->t_settings_info.width_str));
 
-    view_dispatcher_send_custom_event(app->view_dispatcher, MineSweeperSettingsScreenEventHeightChange);
+    view_dispatcher_send_custom_event(app->view_dispatcher, MineSweeperSettingsScreenEventWidthChange);
 }
 
 static void minesweeper_scene_settings_screen_set_height(VariableItem* item) {
@@ -97,7 +90,7 @@ static void minesweeper_scene_settings_screen_set_height(VariableItem* item) {
     variable_item_set_current_value_text(app->t_settings_info.height_item, furi_string_get_cstr(app->t_settings_info.height_str));
 
 
-    view_dispatcher_send_custom_event(app->view_dispatcher, MineSweeperSettingsScreenEventWidthChange);
+    view_dispatcher_send_custom_event(app->view_dispatcher, MineSweeperSettingsScreenEventHeightChange);
 }
 
 static void minesweeper_scene_settings_screen_set_solvable(VariableItem* item) {
@@ -311,6 +304,7 @@ bool minesweeper_scene_settings_screen_on_event(void* context, SceneManagerEvent
     
     if (event.type == SceneManagerEventTypeCustom) {
 
+        // Only these fields require reset confirmation; wrap/feedback are immediate-save.
         app->is_settings_changed = (app->settings_info.board_width != app->t_settings_info.board_width  ||
                                    app->settings_info.board_height != app->t_settings_info.board_height ||
                                    app->settings_info.difficulty != app->t_settings_info.difficulty     ||
@@ -366,6 +360,7 @@ bool minesweeper_scene_settings_screen_on_event(void* context, SceneManagerEvent
 
             if (!scene_manager_search_and_switch_to_previous_scene(
                         app->scene_manager, MineSweeperSceneMenuScreen)) {
+                FURI_LOG_W(TAG, "Settings back target not found, stopping app");
 
                 scene_manager_stop(app->scene_manager);
                 view_dispatcher_stop(app->view_dispatcher);
