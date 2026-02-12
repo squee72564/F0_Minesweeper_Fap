@@ -69,6 +69,7 @@ bool minesweeper_scene_menu_screen_on_event(void* context, SceneManagerEvent eve
             case DialogExResultLeft :
                 if (!scene_manager_search_and_switch_to_previous_scene(
                         app->scene_manager, MineSweeperSceneGameScreen)) {
+                    FURI_LOG_W(TAG, "Menu back target not found, stopping app");
 
                     scene_manager_stop(app->scene_manager);
                     view_dispatcher_stop(app->view_dispatcher);
@@ -85,6 +86,7 @@ bool minesweeper_scene_menu_screen_on_event(void* context, SceneManagerEvent eve
 
             case DialogExResultCenter :
                 scene_manager_next_scene(app->scene_manager, MineSweeperSceneSettingsScreen);
+                consumed = true;
                 break;
 
             default :
