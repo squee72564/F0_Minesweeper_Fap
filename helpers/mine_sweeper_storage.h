@@ -18,6 +18,7 @@
 #define MINESWEEPER_SETTINGS_KEY_DIFFICULTY "BoardDifficulty"
 #define MINESWEEPER_SETTINGS_KEY_FEEDBACK "FeedbackEnabled"
 #define MINESWEEPER_SETTINGS_KEY_WRAP "WrapEnabled"
+#define MINESWEEPER_SETTINGS_KEY_SOLVABLE "EnsureSolvable"
 
 void mine_sweeper_save_settings(void* context);
 bool mine_sweeper_read_settings(void* context);
