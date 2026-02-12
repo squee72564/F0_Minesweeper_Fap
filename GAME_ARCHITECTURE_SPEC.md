@@ -67,7 +67,7 @@ Non-responsibilities:
 
 ## 3.4 Game Logic Layer (Engine)
 
-Recommended new module, for example `game/mine_sweeper_engine.*`.
+Primary module: `engine/mine_sweeper_engine.*`.
 
 Responsibilities:
 
@@ -76,6 +76,22 @@ Responsibilities:
 - Maintain deterministic state transitions.
 - Expose read-only snapshots for rendering and derived status.
 
+Canonical state container:
+
+```c
+typedef struct {
+    MineSweeperGameBoard board;
+    MineGameConfig config;   // width/height/difficulty/solvable/wrap
+    MineGameRuntime rt;      // cursor/counters/phase/timer/input-independent runtime
+} MineSweeperGameState;
+```
+
+Notes:
+
+- `MineSweeperGameBoard` remains unchanged and is composed into `MineSweeperGameState`.
+- `config` is round setup policy/state used by generation and movement rules.
+- `rt` is gameplay runtime state and should be authoritative for win/loss/counters.
+
 API style:
 
 - Stateless-like operations over owned state object or instance methods over engine struct.
@@ -83,7 +99,7 @@ API style:
 
 ## 3.5 Solver Layer
 
-Recommended new module, for example `game/mine_sweeper_solver.*`.
+Primary module: `engine/mine_sweeper_solver.*`.
 
 Responsibilities:
 
@@ -101,7 +117,10 @@ Non-responsibilities:
 
 Owned by app-level domain state:
 
-- `MineSweeperGameEngine` (board, revealed/flagged state, mines, cursor position, counters).
+- `MineSweeperGameState`:
+  - `board`: packed cell truth (`mine/revealed/flag/neighbor_count`) and board dimensions.
+  - `config`: difficulty, ensure-solvable policy, wrap mode, active round dimensions.
+  - `rt`: cursor row/col, `mines_left`, `flags_left`, `tiles_left`, `start_tick`, phase (`Playing/Won/Lost`).
 - `MineSweeperSolverState` (attempt count, progress status, pending job data).
 - Settings (`MineSweeperAppSettings` and active settings fields).
 
@@ -112,6 +131,7 @@ Owned by view model structs:
 - Render projection of board and status.
 - Viewport/window offsets and visual-only state.
 - Optional cached strings.
+- Input-edge/debounce flags required only for UI interaction behavior.
 
 Rule:
 
@@ -128,6 +148,32 @@ Use context pointers consistently:
   - View receives raw `InputEvent`.
   - View maps input to `GameAction`.
   - View callback sends action to scene/app context.
+
+## 4.4 Field Migration Map (Current -> Target)
+
+The current `MineSweeperGameScreenModel` in `views/minesweeper_game_screen.c` still holds authoritative game data. Migrate fields as follows:
+
+- Move to `MineSweeperGameState.board`:
+  - `board[]`
+  - `board_width`, `board_height` (become board dimensions)
+- Move to `MineSweeperGameState.config`:
+  - `board_difficulty`
+  - `ensure_solvable_board`
+  - `wrap_enable`
+- Move to `MineSweeperGameState.rt`:
+  - `curr_pos`
+  - `mines_left`, `flags_left`, `tiles_left`
+  - `start_tick`
+  - `has_lost_game` (replace with explicit phase enum)
+- Keep in view model only:
+  - `right_boundary`, `bottom_boundary` (viewport window)
+  - `info_str` (render cache)
+  - `is_restart_triggered`, `is_holding_down_button` (input UX/debounce)
+
+Coordinate consistency requirement:
+
+- Current view indexing often uses `x * width + y`, while the current engine helper uses `y * width + x`.
+- Choose one canonical index convention before moving reveal/flag/chord logic to avoid transposed behavior.
 
 ## 5. Input and Update Control Flow
 
@@ -239,11 +285,12 @@ View callback returns consumed/not consumed without direct scene transition logi
 
 ## 11. Migration Strategy (From Current Structure)
 
-1. Introduce engine module while preserving existing behavior.
-2. Move board-rule functions from view into engine gradually.
-3. Change view to consume projected engine snapshots only.
-4. Introduce chunked solver service and route events through scene manager.
-5. Remove remaining heavy logic from view callbacks.
+1. Introduce `MineSweeperGameState` and wire it into app ownership while preserving behavior.
+2. Move board generation/reset ownership from view to engine state.
+3. Move reveal/flag/chord/win-loss rule paths from view callbacks to engine APIs.
+4. Change view to consume projected engine snapshots only.
+5. Introduce chunked solver service and route events through scene manager.
+6. Remove remaining heavy logic from view callbacks.
 
 Perform this incrementally in small commits to preserve bisectability.
 
@@ -333,12 +380,12 @@ This section maps the target architecture to the current repository layout.
 
 Recommended new files:
 
-- `game/mine_sweeper_engine.h`
-- `game/mine_sweeper_engine.c`
-- `game/mine_sweeper_solver.h`
-- `game/mine_sweeper_solver.c`
+- `engine/mine_sweeper_engine.h`
+- `engine/mine_sweeper_engine.c`
+- `engine/mine_sweeper_solver.h`
+- `engine/mine_sweeper_solver.c`
 
-If introducing a new `game/` folder is inconvenient, equivalent files can be placed under `helpers/` as an intermediate step.
+Current repo already uses `engine/`; keep all core logic there to avoid churn.
 
 ## 13.5 Side-Effect Helpers
 
@@ -361,8 +408,9 @@ Goal:
 Tasks:
 
 1. Create `mine_sweeper_engine.h/.c` with state struct and minimal action/result enums.
-2. Add translation helpers to import/export current board state format.
-3. Add a thin adapter path so existing view logic can call engine functions while behavior remains equivalent.
+2. Keep `MineSweeperGameBoard` unchanged and wrap it in `MineSweeperGameState`.
+3. Add translation helpers to project engine state into view model (not vice versa).
+4. Add a thin adapter path so existing view logic can call engine functions while behavior remains equivalent.
 
 Exit criteria:
 
@@ -377,8 +425,16 @@ Goal:
 Tasks:
 
 1. Move tile reveal/flag/chord and win/loss evaluation to engine APIs.
-2. Keep view responsible only for action mapping and drawing.
-3. Update scene to call engine and then push projection to view.
+2. Move these current functions out of `views/minesweeper_game_screen.c` first:
+   - `setup_board`
+   - `bfs_tile_clear`
+   - `try_clear_surrounding_tiles`
+   - `handle_short_ok_input`
+   - `handle_long_ok_input`
+   - `handle_long_back_flag_input`
+3. Keep view responsible only for action mapping and drawing.
+4. Update scene to call engine and then push projection to view.
+5. Keep viewport (`right_boundary`, `bottom_boundary`) and render cache (`info_str`) in view model.
 
 Exit criteria:
 
