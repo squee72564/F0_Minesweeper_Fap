@@ -2,25 +2,46 @@
 
 ## 1. Purpose
 
-Define a clean, modular architecture for the Minesweeper app that:
+Define and enforce a clean architecture where:
 
-- Separates scene flow from view rendering.
-- Keeps game rules and board state in a dedicated logic layer.
-- Maintains responsive input/render behavior on all board sizes.
-- Supports a robust solver that does not block the GUI thread.
-- Leaves room for a future multithreaded solver implementation.
+- Engine owns authoritative gameplay state and rules.
+- Scene orchestrates action flow and side effects.
+- View maps input and renders projection only.
+- Solver work never blocks GUI responsiveness.
 
-This is a high-level technical spec for structure and control flow, not a line-by-line implementation plan.
+This document is normative for new work. If code disagrees with this spec, treat the code as migration-in-progress and move it toward this spec.
 
-## 2. Architectural Principles
+## 2. Current Direction and Status
 
-- Single source of truth: game state is owned in one place (logic/engine state), not duplicated across scene/view as authoritative data.
-- Thin scenes: scenes orchestrate navigation and lifecycle, but do not implement low-level board rules.
-- Thin views: views draw and capture input, but do not run heavy game logic loops.
-- Non-blocking GUI thread: no long loops in draw/input/enter callbacks.
-- Explicit data contracts: scene-to-view update APIs define what is projected and when.
+### 2.1 Direction (Locked)
 
-## 3. Layered Design
+- Single source of truth for gameplay counters is `MineGameRuntime`.
+- `MineSweeperGameBoard` is board truth + board metadata only.
+- High-level engine APIs are `minesweeper_engine_*`.
+- Win check is runtime-driven: all safe tiles cleared and all flags consumed against mines.
+
+### 2.2 Status (as of current refactor)
+
+Implemented in `engine/mine_sweeper_engine.*`:
+
+- Runtime-owned progress counters (`tiles_left`, `flags_left`, `mines_left`).
+- Board no longer tracks `revealed_count`.
+- Engine actions:
+  - `minesweeper_engine_new_game`
+  - `minesweeper_engine_reveal`
+  - `minesweeper_engine_chord`
+  - `minesweeper_engine_toggle_flag`
+  - `minesweeper_engine_move_cursor`
+  - `minesweeper_engine_reveal_all_mines`
+  - `minesweeper_engine_check_win_conditions`
+
+Still in progress:
+
+- View is still performing substantial gameplay mutations directly.
+- Scene is not yet the primary gameplay orchestrator.
+- Game screen view callback contract still forwards raw `InputEvent` only.
+
+## 3. Architecture Layers
 
 ## 3.1 App Shell Layer
 
@@ -28,10 +49,9 @@ Owned by `MineSweeperApp` in `minesweeper.h`.
 
 Responsibilities:
 
-- Hold global app services: `SceneManager`, `ViewDispatcher`, notification service.
-- Own scene modules and view modules.
-- Own shared game domain objects (engine + solver state).
-- Coordinate startup/shutdown and dependency wiring.
+- Own scene manager, view dispatcher, notification/effects services.
+- Own domain state (`MineSweeperGameState`, solver state).
+- Wire module dependencies once at startup.
 
 ## 3.2 Scene Layer
 
@@ -39,489 +59,258 @@ Files: `scenes/*.c`
 
 Responsibilities:
 
-- Handle lifecycle: `on_enter`, `on_event`, `on_exit`.
-- Set view context and callbacks during scene enter.
-- Convert high-level view actions into engine operations.
-- Route custom events and scene transitions.
-- Trigger view model refresh after state changes.
+- Handle lifecycle (`on_enter`, `on_event`, `on_exit`).
+- Receive high-level user actions from view.
+- Call engine APIs and interpret `MineSweeperGameResult`.
+- Trigger side effects (haptic/LED/speaker) based on engine result.
+- Push fresh engine projection to the view model.
 
 Non-responsibilities:
 
-- No heavy board solving loops.
-- No direct rendering logic.
+- No direct low-level cell mutation.
+- No long solver loops.
 
 ## 3.3 View Layer
 
-Files: `views/start_screen.*`, `views/minesweeper_game_screen.*`
+Files: `views/*`
 
 Responsibilities:
 
-- Draw from a view model snapshot.
-- Receive raw `InputEvent` and translate into action callbacks.
-- Own only UI-local state (cursor animation flags, viewport offsets, text/icon state, etc.).
+- Draw from a projection snapshot.
+- Map `InputEvent` into higher-level game actions.
+- Keep only UI-local state (viewport offsets, UI flags, cached render strings).
 
 Non-responsibilities:
 
-- No ownership of authoritative board rules state.
-- No long-running computation.
+- No authoritative board-rule decisions.
+- No win/loss logic.
+- No board generation or solving loops.
 
-## 3.4 Game Logic Layer (Engine)
+Note about firmware callback signatures:
+
+- `view_set_input_callback` must use Flipper's raw input callback signature.
+- The view should internally map raw input to action payloads and forward them via an app-level callback.
+
+## 3.4 Engine Layer
 
 Primary module: `engine/mine_sweeper_engine.*`.
 
 Responsibilities:
 
-- Own board truth, tile states, rule validation, win/loss conditions.
-- Execute player actions: move, reveal, chord, flag.
-- Maintain deterministic state transitions.
-- Expose read-only snapshots for rendering and derived status.
+- Own gameplay rules and state transitions.
+- Execute reveal/chord/flag/move actions.
+- Own win/loss phase transitions.
+- Maintain runtime counters and invariants.
 
 Canonical state container:
 
 ```c
 typedef struct {
     MineSweeperGameBoard board;
-    MineGameConfig config;   // width/height/difficulty/solvable/wrap
-    MineGameRuntime rt;      // cursor/counters/phase/timer/input-independent runtime
+    MineGameConfig config;
+    MineGameRuntime rt;
 } MineSweeperGameState;
 ```
 
-Notes:
+## 4. Authoritative Data Contract
 
-- `MineSweeperGameBoard` remains unchanged and is composed into `MineSweeperGameState`.
-- `config` is round setup policy/state used by generation and movement rules.
-- `rt` is gameplay runtime state and should be authoritative for win/loss/counters.
+## 4.1 Board State (`MineSweeperGameBoard`)
 
-API style:
+Allowed responsibilities:
 
-- Stateless-like operations over owned state object or instance methods over engine struct.
-- Clear result codes (`NoOp`, `Changed`, `Win`, `Lose`, `Invalid`).
+- Board dimensions.
+- `mine_count`.
+- Packed cell truth (`mine/revealed/flag/neighbor_count`).
 
-## 3.5 Solver Layer
+Not allowed:
 
-Primary module: `engine/mine_sweeper_solver.*`.
+- Runtime progression counters (`revealed_count`, `tiles_left`, etc.).
 
-Responsibilities:
+## 4.2 Runtime State (`MineGameRuntime`)
 
-- Generate or verify solvable boards.
-- Run incrementally with bounded work per step.
-- Track attempts and stop conditions (iteration cap and timeout).
+Authoritative gameplay runtime fields:
 
-Non-responsibilities:
+- `cursor_row`, `cursor_col`
+- `tiles_left`
+- `flags_left`
+- `mines_left`
+- `start_tick`
+- `phase`
 
-- Do not touch GUI or view APIs directly.
+Counter semantics:
 
-## 4. Data Ownership and Access
+- `tiles_left`: unrevealed non-mine tile count remaining.
+- `flags_left`: number of flags that can still be placed.
+- `mines_left`: mines remaining to be correctly flagged (runtime progress counter, not static mine total).
 
-## 4.1 Authoritative Data
+## 4.3 Win/Loss Contract
 
-Owned by app-level domain state:
+Loss:
 
-- `MineSweeperGameState`:
-  - `board`: packed cell truth (`mine/revealed/flag/neighbor_count`) and board dimensions.
-  - `config`: difficulty, ensure-solvable policy, wrap mode, active round dimensions.
-  - `rt`: cursor row/col, `mines_left`, `flags_left`, `tiles_left`, `start_tick`, phase (`Playing/Won/Lost`).
-- `MineSweeperSolverState` (attempt count, progress status, pending job data).
-- Settings (`MineSweeperAppSettings` and active settings fields).
+- Triggered by revealing a mine (direct reveal or chord reveal path).
+- Engine sets `phase = MineGamePhaseLost`.
+- Engine reveals all mines (`minesweeper_engine_reveal_all_mines`).
 
-## 4.2 View Model Data
+Win:
 
-Owned by view model structs:
+- Triggered when both hold:
+  - `rt.tiles_left == 0`
+  - `rt.flags_left == rt.mines_left`
+- Engine sets `phase = MineGamePhaseWon`.
 
-- Render projection of board and status.
-- Viewport/window offsets and visual-only state.
-- Optional cached strings.
-- Input-edge/debounce flags required only for UI interaction behavior.
+## 4.4 Runtime Invariants
 
-Rule:
+These invariants should hold after every engine action:
 
-- View model is a projection, not source of truth.
-- Scene updates view model from engine snapshot after each meaningful change.
+- `0 <= rt.tiles_left <= (board.width * board.height - board.mine_count)`
+- `0 <= rt.flags_left <= board.mine_count`
+- `0 <= rt.mines_left <= board.mine_count`
+- If `rt.phase == MineGamePhaseWon`, then `rt.tiles_left == 0`.
+- If `rt.phase == MineGamePhaseLost`, mine reveal pass has executed.
 
-## 4.3 Context Wiring
+## 5. Engine API Contract
 
-Use context pointers consistently:
+Current high-level API direction:
 
-- Scene callbacks receive `MineSweeperApp*`.
-- View callbacks receive view instance context set by scene/app.
-- Input callback chain:
-  - View receives raw `InputEvent`.
-  - View maps input to `GameAction`.
-  - View callback sends action to scene/app context.
+- `void minesweeper_engine_new_game(MineSweeperGameState* game_state)`
+- `MineSweeperGameResult minesweeper_engine_reveal(MineSweeperGameState* game_state, uint16_t x, uint16_t y)`
+- `MineSweeperGameResult minesweeper_engine_chord(MineSweeperGameState* game_state, uint16_t x, uint16_t y)`
+- `MineSweeperGameResult minesweeper_engine_toggle_flag(MineSweeperGameState* game_state, uint16_t x, uint16_t y)`
+- `MineSweeperGameResult minesweeper_engine_move_cursor(MineSweeperGameState* game_state, int8_t dx, int8_t dy)`
+- `MineSweeperGameResult minesweeper_engine_reveal_all_mines(MineSweeperGameState* game_state)`
+- `MineSweeperGameResult minesweeper_engine_check_win_conditions(MineSweeperGameState* game_state)`
+- `MineSweeperGameResult minesweeper_engine_apply_action(MineSweeperGameState* game_state, MineGameAction action)`
 
-## 4.4 Field Migration Map (Current -> Target)
+Action dispatch contract:
 
-The current `MineSweeperGameScreenModel` in `views/minesweeper_game_screen.c` still holds authoritative game data. Migrate fields as follows:
+- `MineGameAction` is the scene/view payload for user intent.
+- Action type covers at least: `Move`, `Reveal`, `Flag`, `Chord`, `NewGame`.
+- `Move` uses `dx`/`dy`; other actions operate at runtime cursor unless explicit coordinates are later added.
+- `minesweeper_engine_apply_action` routes to specialized engine functions and returns final result code.
+- Scene should call this as the default gameplay entry point.
 
-- Move to `MineSweeperGameState.board`:
-  - `board[]`
-  - `board_width`, `board_height` (become board dimensions)
-- Move to `MineSweeperGameState.config`:
-  - `board_difficulty`
-  - `ensure_solvable_board`
-  - `wrap_enable`
-- Move to `MineSweeperGameState.rt`:
-  - `curr_pos`
-  - `mines_left`, `flags_left`, `tiles_left`
-  - `start_tick`
-  - `has_lost_game` (replace with explicit phase enum)
-- Keep in view model only:
-  - `right_boundary`, `bottom_boundary` (viewport window)
-  - `info_str` (render cache)
-  - `is_restart_triggered`, `is_holding_down_button` (input UX/debounce)
+Result semantics:
 
-Coordinate consistency requirement:
+- `NOOP`: valid action with no state change.
+- `CHANGED`: state changed without terminal transition.
+- `WIN`: win transition occurred.
+- `LOSE`: loss transition occurred.
+- `INVALID`: invalid parameters/state.
 
-- Current view indexing often uses `x * width + y`, while the current engine helper uses `y * width + x`.
-- Choose one canonical index convention before moving reveal/flag/chord logic to avoid transposed behavior.
+Low-level board functions are internal mutation primitives and must not own runtime counters.
 
-## 5. Input and Update Control Flow
+## 6. Input and Action Flow
 
-## 5.1 High-Level Flow
+Target flow:
 
-1. User input enters active view via `view_set_input_callback`.
-2. View maps raw key/type to action (`MoveUp`, `Reveal`, `Flag`, `Chord`, `OpenMenu`).
-3. View callback invokes scene-provided action handler with app context.
-4. Scene applies action to engine.
-5. Engine returns result and updated state.
-6. Scene triggers side effects (LED/haptic/sound) based on result.
-7. Scene projects engine snapshot into view model and requests redraw.
-8. Scene may emit transition events (`win`, `lose`, `menu`, etc.).
+1. Firmware sends `InputEvent` into view input callback.
+2. View maps input to `MineGameAction` payload.
+3. View forwards action via scene-registered callback.
+4. Scene calls `minesweeper_engine_apply_action(...)` (default path).
+5. Engine returns result + mutated state.
+6. Scene runs effects and transitions.
+7. Scene projects engine snapshot into view model.
+8. View redraws.
 
-## 5.2 Event Routing
+## 7. Scene/View Contracts
 
-- Use `scene_manager_handle_custom_event` for scene transitions and async solver progress events.
-- Keep event IDs explicit and scoped per scene/module.
-- Ensure all scene events are either consumed or intentionally ignored.
+## 7.1 Scene -> View
 
-## 6. Rendering Model
+At scene enter:
 
-- Draw callback reads view model only.
-- Draw callback must avoid business logic and expensive loops.
-- Any expensive formatting or board transforms should be precomputed during projection/update phase.
+- Set context.
+- Set action callback.
+- Push initial projection snapshot.
 
-## 7. Robust Solver Design (Single-Thread, Non-Blocking)
+At scene exit:
 
-## 7.1 Problem
+- Unset callback/context.
+- Clear temporary scene-owned resources.
 
-Large hard boards may require many attempts; a continuous solver loop inside a view callback can freeze viewport/input.
+## 7.2 View -> Scene
 
-## 7.2 Required Behavior
-
-- Solver must never monopolize the GUI thread.
-- Solver work must be chunked into bounded units.
-- Solver must terminate with a deterministic fallback.
-
-## 7.3 Solver State Machine
-
-Suggested states:
-
-- `Idle`
-- `Running`
-- `Succeeded`
-- `FailedMaxAttempts`
-- `FailedTimeout`
-- `Cancelled`
-
-## 7.4 Chunked Execution Model
-
-- Start solve request from scene, not view.
-- Process `N` iterations per tick (configurable budget).
-- After each chunk, yield and schedule next tick with timer/custom event.
-- Update loading/progress UI between chunks.
-
-Suggested limits:
-
-- `max_attempts` hard cap.
-- `max_time_ms` timeout.
-- `iterations_per_tick` budget tuned for responsiveness.
-
-## 7.5 Completion and Fallback
-
-On completion:
-
-- `Succeeded`: commit board to engine, refresh view, continue gameplay.
-- `FailedMaxAttempts` or `FailedTimeout`: use fallback board policy (best-effort or unsolved board), log reason, continue without freeze.
-
-## 8. Scene and View Contracts
-
-## 8.1 Scene -> View Contract
-
-Scene sets at enter:
-
-- Context pointer
-- Input callback
-- Secondary draw callback (if needed)
-- Initial render projection
-
-Scene resets at exit:
-
-- Input callback and context pointers
-- Any optional secondary callbacks
-- Any temporary view resources
-
-## 8.2 View -> Scene Contract
-
-View exposes:
+View should expose explicit APIs:
 
 - `set_context(...)`
-- `set_input_callback(...)`
-- `set_model_projection(...)` or equivalent focused setters
+- `set_action_callback(...)`
+- `apply_projection(...)`
 
-View callback returns consumed/not consumed without direct scene transition logic.
+View should return consumed/not-consumed from raw input callback, but rule execution belongs to scene+engine.
 
-## 9. Reliability and Safety Requirements
+## 8. Deprecated and Outdated Patterns
 
-- Assert all callback contexts and required pointers.
-- Ensure alloc/reset/free lifecycle consistency for view resources.
-- Keep scene enter/exit idempotent where practical.
-- Maintain strict cleanup of timers/solver jobs on scene exit/app shutdown.
+The following are now considered technical debt and should be removed during migration:
 
-## 10. Observability and Diagnostics
+- Authoritative board and counters in `MineSweeperGameScreenModel`.
+- View-owned win/loss and reveal/chord/flag rules.
+- View-owned board generation/solver loops.
+- Duplicate counters with parity assumptions across board/runtime.
 
-- Add concise logs around solver state transitions and stop reasons.
-- Log attempt count and elapsed time for solver completion/failure.
-- Keep logs bounded and avoid per-iteration noise in release builds.
+## 9. File Mapping
 
-## 11. Migration Strategy (From Current Structure)
+- Engine: `engine/mine_sweeper_engine.h`, `engine/mine_sweeper_engine.c`
+- Solver: `engine/mine_sweeper_solver.h`, `engine/mine_sweeper_solver.c`
+- Gameplay scene orchestrator: `scenes/game_screen_scene.c`
+- Gameplay view: `views/minesweeper_game_screen.h`, `views/minesweeper_game_screen.c`
 
-1. Introduce `MineSweeperGameState` and wire it into app ownership while preserving behavior.
-2. Move board generation/reset ownership from view to engine state.
-3. Move reveal/flag/chord/win-loss rule paths from view callbacks to engine APIs.
-4. Change view to consume projected engine snapshots only.
-5. Introduce chunked solver service and route events through scene manager.
-6. Remove remaining heavy logic from view callbacks.
+## 10. Migration Plan (Updated)
 
-Perform this incrementally in small commits to preserve bisectability.
+## Stage 1 (Completed)
 
-## 12. Optional Future Section: Multithreaded Solver
+- Introduced `MineSweeperGameState` split (`board/config/rt`).
+- Introduced `minesweeper_engine_*` naming for high-level APIs.
+- Removed board-side `revealed_count` runtime duplication.
+- Added runtime-based win check API.
+- Added engine-level toggle flag cursor move, and reveal-all-mines actions.
 
-This section is optional and can be implemented later for faster large-board solving.
+## Stage 2 (Next)
 
-## 12.1 Goals
+- Add game screen setter for scene-owned action callback (parallel to start screen pattern).
+- Move input mapping in view from direct mutation to action emission.
+- Add `MineGameAction` payload contract shared by view/scene/engine.
+- Add `minesweeper_engine_apply_action(...)` and route scene gameplay through it.
+- Move gameplay action handling into `scenes/game_screen_scene.c` via `apply_action`.
+- Keep view as projection-only for authoritative gameplay data.
 
-- Improve solve throughput for large/high-difficulty boards.
-- Keep GUI thread fully responsive.
+## Stage 3
 
-## 12.2 Constraints
+- Remove remaining direct board mutation helpers from view gameplay paths.
+- Ensure scene is sole path to call engine gameplay actions.
+- Verify all side effects are scene-triggered from engine result codes.
 
-- Worker thread must not call GUI/view APIs directly.
-- Shared state must use message queues, events, or guarded handoff data.
-- Cancellation must be explicit on scene exit/app shutdown.
+## Stage 4
 
-## 12.3 Suggested Architecture
+- Integrate non-blocking solver service (chunked, event-driven).
+- Keep solver off heavy loops in view callbacks.
 
-- Scene starts solver job by submitting request payload to worker queue.
-- Worker computes and posts progress/result messages back to scene queue.
-- Scene consumes messages, updates solver state, and refreshes view.
+## 11. Validation Matrix
 
-Message types:
-
-- `SolverProgress`
-- `SolverSuccess`
-- `SolverFailure`
-- `SolverCancelledAck`
-
-## 12.4 Safety Rules
-
-- One active solver job per game session.
-- Job IDs required to ignore stale results.
-- Hard timeout and attempt cap still required, even off-thread.
-- Ensure thread join/shutdown on app stop.
-
-## 12.5 Rollout Plan
-
-1. Keep single-thread chunked solver as baseline.
-2. Add worker abstraction behind same solver interface.
-3. Feature-flag multithreaded mode for testing.
-4. Validate stability under repeated start/exit/relaunch cycles.
-
-## 13. Mapping to Current Files
-
-This section maps the target architecture to the current repository layout.
-
-## 13.1 App Shell and Wiring
-
-- `minesweeper.h`
-  - Keep `MineSweeperApp` as the shared root context.
-  - Add engine and solver handles/state fields here.
-- `minesweeper.c`
-  - Allocate/free engine and solver modules.
-  - Keep scene manager and view dispatcher setup here.
-  - Wire callbacks and shared context once at startup.
-
-## 13.2 Scene Layer
-
-- `scenes/game_screen_scene.c`
-  - Be the primary orchestrator for gameplay.
-  - On enter: bind game view callbacks/context and initialize projection from engine snapshot.
-  - On event: process custom solver-progress/result events and state transitions.
-  - On exit: cancel/cleanup solver jobs and unbind view callback/context.
-- `scenes/start_screen_scene.c`, `scenes/menu_scene.c`, `scenes/settings_scene.c`, `scenes/confirmation_scene.c`, `scenes/info_scene.c`
-  - Keep flow/navigation concerns only.
-  - Avoid embedding board-rule logic.
-
-## 13.3 View Layer
-
-- `views/minesweeper_game_screen.c`
-  - Retain rendering and input mapping responsibilities.
-  - Remove authoritative board-rule ownership over time.
-  - Expose action callback API (`on_action`) and projection update API.
-- `views/minesweeper_game_screen.h`
-  - Add explicit contracts for:
-    - setting action callback + context,
-    - applying render projection/snapshot.
-- `views/minesweeper_game_screen_i.h`
-  - Keep private helper/model definitions only.
-- `views/start_screen.c`, `views/start_screen.h`
-  - Keep as view-only module (already aligned by Stage 12 cleanup).
-
-## 13.4 Logic and Solver Modules (New)
-
-Recommended new files:
-
-- `engine/mine_sweeper_engine.h`
-- `engine/mine_sweeper_engine.c`
-- `engine/mine_sweeper_solver.h`
-- `engine/mine_sweeper_solver.c`
-
-Current repo already uses `engine/`; keep all core logic there to avoid churn.
-
-## 13.5 Side-Effect Helpers
-
-- `helpers/mine_sweeper_haptic.*`
-- `helpers/mine_sweeper_led.*`
-- `helpers/mine_sweeper_speaker.*`
-
-Use these as effect backends called by scene logic based on engine result codes, not as rule decision makers.
-
-## 14. Staged Refactor Checklist
-
-This checklist is intentionally incremental and low-risk.
-
-## Stage A: Define Engine Interface
-
-Goal:
-
-- Introduce engine API without changing gameplay behavior.
-
-Tasks:
-
-1. Create `mine_sweeper_engine.h/.c` with state struct and minimal action/result enums.
-2. Keep `MineSweeperGameBoard` unchanged and wrap it in `MineSweeperGameState`.
-3. Add translation helpers to project engine state into view model (not vice versa).
-4. Add a thin adapter path so existing view logic can call engine functions while behavior remains equivalent.
-
-Exit criteria:
-
-- Build passes with no behavior change.
-
-## Stage B: Move Rule Logic Out of View
-
-Goal:
-
-- Shift board mutation and win/loss logic from `views/minesweeper_game_screen.c` into engine.
-
-Tasks:
-
-1. Move tile reveal/flag/chord and win/loss evaluation to engine APIs.
-2. Move these current functions out of `views/minesweeper_game_screen.c` first:
-   - `setup_board`
-   - `bfs_tile_clear`
-   - `try_clear_surrounding_tiles`
-   - `handle_short_ok_input`
-   - `handle_long_ok_input`
-   - `handle_long_back_flag_input`
-3. Keep view responsible only for action mapping and drawing.
-4. Update scene to call engine and then push projection to view.
-5. Keep viewport (`right_boundary`, `bottom_boundary`) and render cache (`info_str`) in view model.
-
-Exit criteria:
-
-- Gameplay still matches current behavior.
-- View callbacks contain no heavy board-rule loops.
-
-## Stage C: Introduce Non-Blocking Solver Service
-
-Goal:
-
-- Replace any long-running solve loop with chunked incremental processing.
-
-Tasks:
-
-1. Add solver state struct (`Idle/Running/Succeeded/Failed/Cancelled`).
-2. Add `solver_start`, `solver_step`, `solver_cancel`.
-3. Use timer/custom events to run `solver_step` with bounded iteration budget.
-4. Enforce `max_attempts` and `max_time_ms` with deterministic fallback.
-
-Exit criteria:
-
-- Large-board solve no longer freezes viewport/input.
-- Solver always terminates with success or explicit fallback.
-
-## Stage D: Scene-Orchestrated Projection Updates
-
-Goal:
-
-- Make scene the explicit coordinator of action -> engine -> projection -> redraw.
-
-Tasks:
-
-1. Add action callback contract from view to scene.
-2. Add snapshot/projection update API from scene to view.
-3. Centralize effect triggering in scene based on engine result codes.
-
-Exit criteria:
-
-- Clear unidirectional flow and no hidden state mutation across layers.
-
-## Stage E: Hardening and Cleanup
-
-Goal:
-
-- Stabilize lifecycle and cleanup behavior.
-
-Tasks:
-
-1. Add assertions and null-guards for all context/callback boundaries.
-2. Verify scene enter/exit idempotence and solver cancellation on exit.
-3. Remove obsolete helper functions and dead state fields.
-
-Exit criteria:
-
-- Clean alloc/reset/free behavior across repeated relaunch cycles.
-
-## Stage F (Optional): Multithreaded Solver
-
-Goal:
-
-- Improve solve throughput while preserving GUI responsiveness.
-
-Tasks:
-
-1. Add worker thread behind same solver interface.
-2. Use message passing for progress/result; no GUI access from worker.
-3. Add job IDs and cancellation on scene exit/app shutdown.
-
-Exit criteria:
-
-- No race-induced crashes across repeated start/stop cycles.
-- Performance gain measurable on large hard boards.
-
-## 15. Validation Matrix
-
-Run after each stage:
+Run after each migration stage:
 
 1. Build: `uvx ufbt`
-2. Smoke test:
-   - app launch -> start screen -> game
-   - movement/flag/reveal/chord paths
-   - win and lose transitions
-   - menu/settings/info navigation
-3. Solver stress:
-   - large hard board with ensure-solvable enabled
-   - repeated relaunch cycles
-   - confirm no input/render lockups
-4. Shutdown test:
-   - exit app during solver activity
-   - relaunch and verify clean startup
+2. Input smoke:
+   - movement, reveal, flag, chord
+   - no duplicate handling paths
+3. Terminal states:
+   - mine hit reveals all mines + loss phase
+   - win only when runtime win conditions are met
+4. Navigation:
+   - scene transitions and back behavior remain stable
+5. Stability:
+   - repeated game reset/start/exit cycles
+
+## 12. Engine Dispatch Guideline
+
+`minesweeper_engine_apply_action(...)` is the preferred engine entry point from scene callbacks.
+
+Guideline:
+
+- Keep specialized engine actions (`reveal`, `flag`, `chord`, `move_cursor`, `new_game`) for focused testing and reuse.
+- Keep `apply_action` as a thin, deterministic dispatcher over those specialized functions.
+- Keep side effects and scene transitions outside engine.
+
+Benefits:
+
+- Single scene call path for gameplay input.
+- Consistent result handling (`NOOP/CHANGED/WIN/LOSE/INVALID`).
+- Cleaner scene code and easier input contract evolution.
