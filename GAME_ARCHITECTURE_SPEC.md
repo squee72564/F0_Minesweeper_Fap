@@ -34,6 +34,14 @@ Implemented in `engine/mine_sweeper_engine.*`:
   - `minesweeper_engine_move_cursor`
   - `minesweeper_engine_reveal_all_mines`
   - `minesweeper_engine_check_win_conditions`
+  - `minesweeper_engine_apply_action`
+- Engine state setup/restore APIs:
+  - `minesweeper_engine_set_config`
+  - `minesweeper_engine_set_runtime`
+  - `minesweeper_engine_validate_state`
+- Action semantics tightened:
+  - reveal/chord return `NOOP` when no tile mutation occurs
+  - `apply_action` blocks non-`NewGame` input once phase is `Won/Lost`
 
 Still in progress:
 
@@ -180,6 +188,9 @@ Current high-level API direction:
 - `MineSweeperGameResult minesweeper_engine_reveal_all_mines(MineSweeperGameState* game_state)`
 - `MineSweeperGameResult minesweeper_engine_check_win_conditions(MineSweeperGameState* game_state)`
 - `MineSweeperGameResult minesweeper_engine_apply_action(MineSweeperGameState* game_state, MineGameAction action)`
+- `MineSweeperGameResult minesweeper_engine_set_config(MineSweeperGameState* game_state, const MineGameConfig* config)`
+- `MineSweeperGameResult minesweeper_engine_set_runtime(MineSweeperGameState* game_state, const MineGameRuntime* runtime)`
+- `MineSweeperGameResult minesweeper_engine_validate_state(const MineSweeperGameState* game_state)`
 
 Action dispatch contract:
 
@@ -187,6 +198,9 @@ Action dispatch contract:
 - Action type covers at least: `Move`, `Reveal`, `Flag`, `Chord`, `NewGame`.
 - `Move` uses `dx`/`dy`; other actions operate at runtime cursor unless explicit coordinates are later added.
 - `minesweeper_engine_apply_action` routes to specialized engine functions and returns final result code.
+- `minesweeper_engine_set_config` validates config and syncs board dimensions.
+- `minesweeper_engine_set_runtime` validates runtime against current board metadata before applying.
+- `minesweeper_engine_validate_state` validates config/board/runtime invariants for restore/load paths.
 - Scene should call this as the default gameplay entry point.
 
 Result semantics:
@@ -261,16 +275,18 @@ The following are now considered technical debt and should be removed during mig
 - Introduced `minesweeper_engine_*` naming for high-level APIs.
 - Removed board-side `revealed_count` runtime duplication.
 - Added runtime-based win check API.
-- Added engine-level toggle flag cursor move, and reveal-all-mines actions.
+- Added engine-level toggle flag, cursor move, and reveal-all-mines actions.
+- Added `MineGameAction` + `minesweeper_engine_apply_action(...)` dispatch path.
+- Added config/runtime/state validation APIs for restore flows.
+- Aligned reveal/chord return behavior to true mutation semantics (`NOOP` vs `CHANGED`).
 
 ## Stage 2 (Next)
 
 - Add game screen setter for scene-owned action callback (parallel to start screen pattern).
 - Move input mapping in view from direct mutation to action emission.
-- Add `MineGameAction` payload contract shared by view/scene/engine.
-- Add `minesweeper_engine_apply_action(...)` and route scene gameplay through it.
 - Move gameplay action handling into `scenes/game_screen_scene.c` via `apply_action`.
 - Keep view as projection-only for authoritative gameplay data.
+- Add scene->view projection update API and remove direct rule mutation in view callbacks.
 
 ## Stage 3
 
@@ -314,3 +330,10 @@ Benefits:
 - Single scene call path for gameplay input.
 - Consistent result handling (`NOOP/CHANGED/WIN/LOSE/INVALID`).
 - Cleaner scene code and easier input contract evolution.
+
+## 13. Immediate Next Steps
+
+1. Add game screen action callback setter and register it in `scenes/game_screen_scene.c`.
+2. Route all gameplay actions through `minesweeper_engine_apply_action(...)`.
+3. Add engine->view projection update path and remove direct gameplay mutation from `views/minesweeper_game_screen.c`.
+4. Add or confirm coordinate bounds checks for direct coordinate-taking engine calls used outside `apply_action`.
