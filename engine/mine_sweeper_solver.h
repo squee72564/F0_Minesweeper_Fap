@@ -6,8 +6,7 @@
 #include <stdbool.h>
 
 bool check_board_with_solver(
-    MineSweeperGameBoard* board,
-    uint16_t total_mines
+    MineSweeperGameBoard* board
 );
 
 void bfs_tile_clear_solver(
