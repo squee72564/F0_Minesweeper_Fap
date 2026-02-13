@@ -15,8 +15,8 @@ This document is normative for new work. If code disagrees with this spec, treat
 
 ### 2.1 Direction (Locked)
 
-- Single source of truth for gameplay counters is `MineGameRuntime`.
-- `MineSweeperGameBoard` is board truth + board metadata only.
+- Single source of truth for gameplay counters is `MineSweeperRuntime`.
+- `MineSweeperBoard` is board truth + board metadata only.
 - High-level engine APIs are `minesweeper_engine_*`.
 - Win check is runtime-driven: all safe tiles cleared and all flags consumed against mines.
 
@@ -58,7 +58,7 @@ Owned by `MineSweeperApp` in `minesweeper.h`.
 Responsibilities:
 
 - Own scene manager, view dispatcher, notification/effects services.
-- Own domain state (`MineSweeperGameState`, solver state).
+- Own domain state (`MineSweeperState`, solver state).
 - Wire module dependencies once at startup.
 
 ## 3.2 Scene Layer
@@ -69,7 +69,7 @@ Responsibilities:
 
 - Handle lifecycle (`on_enter`, `on_event`, `on_exit`).
 - Receive high-level user actions from view.
-- Call engine APIs and interpret `MineSweeperGameResult`.
+- Call engine APIs and interpret `MineSweeperResult`.
 - Trigger side effects (haptic/LED/speaker) based on engine result.
 - Push fresh engine projection to the view model.
 
@@ -114,15 +114,15 @@ Canonical state container:
 
 ```c
 typedef struct {
-    MineSweeperGameBoard board;
-    MineGameConfig config;
-    MineGameRuntime rt;
-} MineSweeperGameState;
+    MineSweeperBoard board;
+    MineSweeperConfig config;
+    MineSweeperRuntime rt;
+} MineSweeperState;
 ```
 
 ## 4. Authoritative Data Contract
 
-## 4.1 Board State (`MineSweeperGameBoard`)
+## 4.1 Board State (`MineSweeperBoard`)
 
 Allowed responsibilities:
 
@@ -134,7 +134,7 @@ Not allowed:
 
 - Runtime progression counters (`revealed_count`, `tiles_left`, etc.).
 
-## 4.2 Runtime State (`MineGameRuntime`)
+## 4.2 Runtime State (`MineSweeperRuntime`)
 
 Authoritative gameplay runtime fields:
 
@@ -156,7 +156,7 @@ Counter semantics:
 Loss:
 
 - Triggered by revealing a mine (direct reveal or chord reveal path).
-- Engine sets `phase = MineGamePhaseLost`.
+- Engine sets `phase = MineSweeperPhaseLost`.
 - Engine reveals all mines (`minesweeper_engine_reveal_all_mines`).
 
 Win:
@@ -164,7 +164,7 @@ Win:
 - Triggered when both hold:
   - `rt.tiles_left == 0`
   - `rt.flags_left == rt.mines_left`
-- Engine sets `phase = MineGamePhaseWon`.
+- Engine sets `phase = MineSweeperPhaseWon`.
 
 ## 4.4 Runtime Invariants
 
@@ -173,28 +173,28 @@ These invariants should hold after every engine action:
 - `0 <= rt.tiles_left <= (board.width * board.height - board.mine_count)`
 - `0 <= rt.flags_left <= board.mine_count`
 - `0 <= rt.mines_left <= board.mine_count`
-- If `rt.phase == MineGamePhaseWon`, then `rt.tiles_left == 0`.
-- If `rt.phase == MineGamePhaseLost`, mine reveal pass has executed.
+- If `rt.phase == MineSweeperPhaseWon`, then `rt.tiles_left == 0`.
+- If `rt.phase == MineSweeperPhaseLost`, mine reveal pass has executed.
 
 ## 5. Engine API Contract
 
 Current high-level API direction:
 
-- `void minesweeper_engine_new_game(MineSweeperGameState* game_state)`
-- `MineSweeperGameResult minesweeper_engine_reveal(MineSweeperGameState* game_state, uint16_t x, uint16_t y)`
-- `MineSweeperGameResult minesweeper_engine_chord(MineSweeperGameState* game_state, uint16_t x, uint16_t y)`
-- `MineSweeperGameResult minesweeper_engine_toggle_flag(MineSweeperGameState* game_state, uint16_t x, uint16_t y)`
-- `MineSweeperGameResult minesweeper_engine_move_cursor(MineSweeperGameState* game_state, int8_t dx, int8_t dy)`
-- `MineSweeperGameResult minesweeper_engine_reveal_all_mines(MineSweeperGameState* game_state)`
-- `MineSweeperGameResult minesweeper_engine_check_win_conditions(MineSweeperGameState* game_state)`
-- `MineSweeperGameResult minesweeper_engine_apply_action(MineSweeperGameState* game_state, MineGameAction action)`
-- `MineSweeperGameResult minesweeper_engine_set_config(MineSweeperGameState* game_state, const MineGameConfig* config)`
-- `MineSweeperGameResult minesweeper_engine_set_runtime(MineSweeperGameState* game_state, const MineGameRuntime* runtime)`
-- `MineSweeperGameResult minesweeper_engine_validate_state(const MineSweeperGameState* game_state)`
+- `void minesweeper_engine_new_game(MineSweeperState* game_state)`
+- `MineSweeperResult minesweeper_engine_reveal(MineSweeperState* game_state, uint16_t x, uint16_t y)`
+- `MineSweeperResult minesweeper_engine_chord(MineSweeperState* game_state, uint16_t x, uint16_t y)`
+- `MineSweeperResult minesweeper_engine_toggle_flag(MineSweeperState* game_state, uint16_t x, uint16_t y)`
+- `MineSweeperResult minesweeper_engine_move_cursor(MineSweeperState* game_state, int8_t dx, int8_t dy)`
+- `MineSweeperResult minesweeper_engine_reveal_all_mines(MineSweeperState* game_state)`
+- `MineSweeperResult minesweeper_engine_check_win_conditions(MineSweeperState* game_state)`
+- `MineSweeperResult minesweeper_engine_apply_action(MineSweeperState* game_state, MineSweeperAction action)`
+- `MineSweeperResult minesweeper_engine_set_config(MineSweeperState* game_state, const MineSweeperConfig* config)`
+- `MineSweeperResult minesweeper_engine_set_runtime(MineSweeperState* game_state, const MineSweeperRuntime* runtime)`
+- `MineSweeperResult minesweeper_engine_validate_state(const MineSweeperState* game_state)`
 
 Action dispatch contract:
 
-- `MineGameAction` is the scene/view payload for user intent.
+- `MineSweeperAction` is the scene/view payload for user intent.
 - Action type covers at least: `Move`, `Reveal`, `Flag`, `Chord`, `NewGame`.
 - `Move` uses `dx`/`dy`; other actions operate at runtime cursor unless explicit coordinates are later added.
 - `minesweeper_engine_apply_action` routes to specialized engine functions and returns final result code.
@@ -218,7 +218,7 @@ Low-level board functions are internal mutation primitives and must not own runt
 Target flow:
 
 1. Firmware sends `InputEvent` into view input callback.
-2. View maps input to `MineGameAction` payload.
+2. View maps input to `MineSweeperAction` payload.
 3. View forwards action via scene-registered callback.
 4. Scene calls `minesweeper_engine_apply_action(...)` (default path).
 5. Engine returns result + mutated state.
@@ -271,12 +271,12 @@ The following are now considered technical debt and should be removed during mig
 
 ## Stage 1 (Completed)
 
-- Introduced `MineSweeperGameState` split (`board/config/rt`).
+- Introduced `MineSweeperState` split (`board/config/rt`).
 - Introduced `minesweeper_engine_*` naming for high-level APIs.
 - Removed board-side `revealed_count` runtime duplication.
 - Added runtime-based win check API.
 - Added engine-level toggle flag, cursor move, and reveal-all-mines actions.
-- Added `MineGameAction` + `minesweeper_engine_apply_action(...)` dispatch path.
+- Added `MineSweeperAction` + `minesweeper_engine_apply_action(...)` dispatch path.
 - Added config/runtime/state validation APIs for restore flows.
 - Aligned reveal/chord return behavior to true mutation semantics (`NOOP` vs `CHANGED`).
 
