@@ -5,12 +5,38 @@
 #include <stdbool.h>
 
 typedef enum {
+    MineGamePhasePlaying = 0,
+    MineGamePhaseWon,
+    MineGamePhaseLost,
+} MineGamePhase;
+
+typedef enum {
+    MineGameActionMove = 0,
+    MineGameActionReveal,
+    MineGameActionFlag,
+    MineGameActionChord,
+    MineGameActionNewGame,
+} MineGameActionType;
+
+typedef enum {
+    MineMoveOutcomeNone = 0,
+    MineMoveOutcomeMoved,
+    MineMoveOutcomeWrapped,
+    MineMoveOutcomeBlocked,
+} MineMoveOutcome;
+
+typedef enum {
     NOOP,
     CHANGED,
     WIN,
     LOSE,
     INVALID
 } MineSweeperGameResult;
+
+typedef struct {
+    MineSweeperGameResult result;
+    MineMoveOutcome move_outcome;
+} MineEngineActionResult;
 
 /* ---- Cell Layout ----
  * bit 0 : mine
@@ -65,12 +91,6 @@ typedef struct {
     MineSweeperGameCell cells[BOARD_MAX_TILES];
 } MineSweeperGameBoard;
 
-typedef enum {
-    MineGamePhasePlaying = 0,
-    MineGamePhaseWon,
-    MineGamePhaseLost,
-} MineGamePhase;
-
 typedef struct {
     uint8_t width;
     uint8_t height;
@@ -94,14 +114,6 @@ typedef struct {
     MineGameConfig config;
     MineGameRuntime rt;
 } MineSweeperGameState;
-
-typedef enum {
-    MineGameActionMove = 0,
-    MineGameActionReveal,
-    MineGameActionFlag,
-    MineGameActionChord,
-    MineGameActionNewGame,
-} MineGameActionType;
 
 typedef struct {
     MineGameActionType type;
@@ -150,6 +162,8 @@ MineSweeperGameResult minesweeper_engine_reveal_all_mines(MineSweeperGameState* 
 MineSweeperGameResult minesweeper_engine_check_win_conditions(MineSweeperGameState* game_state);
 
 MineSweeperGameResult minesweeper_engine_apply_action(MineSweeperGameState* game_state, MineGameAction action);
+
+MineEngineActionResult minesweeper_engine_apply_action_ex(MineSweeperGameState* game_state, MineGameAction action);
 
 MineSweeperGameResult minesweeper_engine_set_config(
     MineSweeperGameState* game_state,

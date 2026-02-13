@@ -509,41 +509,107 @@ MineSweeperGameResult minesweeper_engine_apply_action(
     MineSweeperGameState* game_state,
     MineGameAction action
 ) {
+    MineEngineActionResult detailed = minesweeper_engine_apply_action_ex(game_state, action);
+    return detailed.result;
+}
+
+static MineMoveOutcome minesweeper_engine_classify_move_outcome(
+    const MineSweeperGameState* game_state,
+    uint8_t prev_col,
+    uint8_t prev_row,
+    int8_t dx,
+    int8_t dy,
+    MineSweeperGameResult move_result) {
     furi_assert(game_state);
+
+    if(move_result != CHANGED && move_result != NOOP) {
+        return MineMoveOutcomeNone;
+    }
+
+    const MineSweeperGameBoard* board = &game_state->board;
+    if(board->width == 0 || board->height == 0) {
+        return MineMoveOutcomeNone;
+    }
+
+    int16_t raw_next_col = (int16_t)prev_col + dx;
+    int16_t raw_next_row = (int16_t)prev_row + dy;
+    bool attempted_oob = raw_next_col < 0 || raw_next_col >= board->width ||
+                         raw_next_row < 0 || raw_next_row >= board->height;
+
+    if(game_state->config.wrap_enabled) {
+        if(move_result == CHANGED && attempted_oob) {
+            return MineMoveOutcomeWrapped;
+        } else if(move_result == CHANGED) {
+            return MineMoveOutcomeMoved;
+        }
+        return MineMoveOutcomeNone;
+    }
+
+    if(move_result == NOOP && attempted_oob) {
+        return MineMoveOutcomeBlocked;
+    } else if(move_result == CHANGED) {
+        return MineMoveOutcomeMoved;
+    }
+
+    return MineMoveOutcomeNone;
+}
+
+MineEngineActionResult minesweeper_engine_apply_action_ex(
+    MineSweeperGameState* game_state,
+    MineGameAction action
+) {
+    furi_assert(game_state);
+
+    MineEngineActionResult detailed = {
+        .result = INVALID,
+        .move_outcome = MineMoveOutcomeNone,
+    };
 
     if(action.type != MineGameActionNewGame &&
        game_state->rt.phase != MineGamePhasePlaying) {
-        return NOOP;
+        detailed.result = NOOP;
+        return detailed;
     }
 
     switch(action.type) {
-    case MineGameActionMove:
-        return minesweeper_engine_move_cursor(game_state, action.dx, action.dy);
+    case MineGameActionMove: {
+        uint8_t prev_col = game_state->rt.cursor_col;
+        uint8_t prev_row = game_state->rt.cursor_row;
+        detailed.result = minesweeper_engine_move_cursor(game_state, action.dx, action.dy);
+        detailed.move_outcome = minesweeper_engine_classify_move_outcome(
+            game_state, prev_col, prev_row, action.dx, action.dy, detailed.result);
+        return detailed;
+    }
 
     case MineGameActionReveal:
-        return minesweeper_engine_reveal(
+        detailed.result = minesweeper_engine_reveal(
             game_state,
             game_state->rt.cursor_col,
             game_state->rt.cursor_row);
+        return detailed;
 
     case MineGameActionFlag:
-        return minesweeper_engine_toggle_flag(
+        detailed.result = minesweeper_engine_toggle_flag(
             game_state,
             game_state->rt.cursor_col,
             game_state->rt.cursor_row);
+        return detailed;
 
     case MineGameActionChord:
-        return minesweeper_engine_chord(
+        detailed.result = minesweeper_engine_chord(
             game_state,
             game_state->rt.cursor_col,
             game_state->rt.cursor_row);
+        return detailed;
 
     case MineGameActionNewGame:
         minesweeper_engine_new_game(game_state);
-        return CHANGED;
+        detailed.result = CHANGED;
+        return detailed;
 
     default:
-        return INVALID;
+        detailed.result = INVALID;
+        return detailed;
     }
 }
 
