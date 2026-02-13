@@ -29,7 +29,7 @@ static uint16_t random_uniform_u16(uint16_t upper_exclusion) {
 }
 
 // Fisher-Yates Shuffle
-static void board_shuffle(MineSweeperGameBoard* board) {
+static void board_shuffle(MineSweeperBoard* board) {
     uint16_t total = (uint16_t)board->width * board->height;
     if(total <= 1u) return;
 
@@ -37,13 +37,13 @@ static void board_shuffle(MineSweeperGameBoard* board) {
         // Generate j in [0, i]
         uint16_t j = random_uniform_u16(i + 1u);
 
-        MineSweeperGameCell tmp = board->cells[i];
+        MineSweeperCell tmp = board->cells[i];
         board->cells[i] = board->cells[j];
         board->cells[j] = tmp;
     }
 }
 
-static void board_clear(MineSweeperGameBoard* board) {
+static void board_clear(MineSweeperBoard* board) {
     furi_assert(board);
 
     uint16_t total = board->height * board->width;
@@ -54,7 +54,7 @@ static void board_clear(MineSweeperGameBoard* board) {
 
 }
 
-static bool config_is_valid(const MineGameConfig* config) {
+static bool config_is_valid(const MineSweeperConfig* config) {
     if(!config) return false;
 
     return config->width > 0 &&
@@ -65,8 +65,8 @@ static bool config_is_valid(const MineGameConfig* config) {
 }
 
 static bool runtime_is_valid_for_board(
-    const MineSweeperGameBoard* board,
-    const MineGameRuntime* runtime
+    const MineSweeperBoard* board,
+    const MineSweeperRuntime* runtime
 ) {
     if(!board || !runtime) return false;
     if(board->width == 0 || board->height == 0) return false;
@@ -83,9 +83,9 @@ static bool runtime_is_valid_for_board(
     if(runtime->flags_left > board->mine_count) return false;
     if(runtime->mines_left > board->mine_count) return false;
 
-    if(runtime->phase != MineGamePhasePlaying &&
-       runtime->phase != MineGamePhaseWon &&
-       runtime->phase != MineGamePhaseLost) {
+    if(runtime->phase != MineSweeperPhasePlaying &&
+       runtime->phase != MineSweeperPhaseWon &&
+       runtime->phase != MineSweeperPhaseLost) {
         return false;
     }
 
@@ -99,7 +99,7 @@ const int8_t neighbor_offsets[8][2] = {
 };
 
 uint16_t board_index(
-    const MineSweeperGameBoard* board,
+    const MineSweeperBoard* board,
     const uint8_t x,
     const uint8_t y
 ) {
@@ -107,21 +107,21 @@ uint16_t board_index(
 }
 
 uint8_t board_x(
-    const MineSweeperGameBoard* board,
+    const MineSweeperBoard* board,
     uint16_t i
 ) {
     return i % board->width;
 }
 
 uint8_t board_y(
-    const MineSweeperGameBoard* board,
+    const MineSweeperBoard* board,
     uint16_t i
 ) {
     return i / board->width;
 }
 
 bool board_in_bounds(
-    const MineSweeperGameBoard* board,
+    const MineSweeperBoard* board,
     int8_t x,
     int8_t y
 ) {
@@ -131,7 +131,7 @@ bool board_in_bounds(
 }
 
 void board_init(
-    MineSweeperGameBoard* board,
+    MineSweeperBoard* board,
     uint8_t width,
     uint8_t height
 ) {
@@ -143,7 +143,7 @@ void board_init(
 }
 
 bool board_place_mine(
-    MineSweeperGameBoard* board,
+    MineSweeperBoard* board,
     uint8_t x,
     uint8_t y
 ) {
@@ -157,7 +157,7 @@ bool board_place_mine(
     return true;
 }
 
-void board_compute_neighbor_counts(MineSweeperGameBoard* board) {
+void board_compute_neighbor_counts(MineSweeperBoard* board) {
     for (uint8_t y = 0; y < board->height; ++y) {
         for (uint8_t x = 0; x < board->width; ++x) {
             
@@ -184,7 +184,7 @@ void board_compute_neighbor_counts(MineSweeperGameBoard* board) {
 }
 
 bool board_reveal_cell(
-    MineSweeperGameBoard* board,
+    MineSweeperBoard* board,
     uint8_t x,
     uint8_t y
 ) {
@@ -198,7 +198,7 @@ bool board_reveal_cell(
     return true;
 }
 
-uint16_t board_reveal_flood(MineSweeperGameBoard* board, uint8_t x, uint8_t y) {
+uint16_t board_reveal_flood(MineSweeperBoard* board, uint8_t x, uint8_t y) {
     furi_assert(board);
 
     uint16_t cleared_tiles = 0;
@@ -254,7 +254,7 @@ uint16_t board_reveal_flood(MineSweeperGameBoard* board, uint8_t x, uint8_t y) {
 }
 
 void board_toggle_flag(
-    MineSweeperGameBoard* board,
+    MineSweeperBoard* board,
     uint8_t x,
     uint8_t y
 ) {
@@ -269,7 +269,7 @@ void board_toggle_flag(
         CELL_SET_FLAGGED(board->cells[i]);
 }
 
-void minesweeper_engine_new_game(MineSweeperGameState* game_state) {
+void minesweeper_engine_new_game(MineSweeperState* game_state) {
     furi_assert(game_state);
 
     uint16_t total_cells = game_state->board.width * game_state->board.height;
@@ -297,7 +297,7 @@ void minesweeper_engine_new_game(MineSweeperGameState* game_state) {
     game_state->rt.tiles_left = total_cells - number_mines;
     game_state->rt.flags_left = number_mines;
     game_state->rt.mines_left = number_mines;
-    game_state->rt.phase = MineGamePhasePlaying;
+    game_state->rt.phase = MineSweeperPhasePlaying;
 
     if(game_state->rt.cursor_col >= game_state->board.width) {
         game_state->rt.cursor_col = 0;
@@ -307,40 +307,40 @@ void minesweeper_engine_new_game(MineSweeperGameState* game_state) {
     }
 }
 
-MineSweeperGameResult minesweeper_engine_reveal(MineSweeperGameState* game_state, uint16_t x, uint16_t y) {
+MineSweeperResult minesweeper_engine_reveal(MineSweeperState* game_state, uint16_t x, uint16_t y) {
     furi_assert(game_state);
 
-    MineSweeperGameBoard* board = &game_state->board;
+    MineSweeperBoard* board = &game_state->board;
 
     uint16_t cursor_pos_1d = board_index(board, x, y);
 
     if (CELL_IS_MINE(board->cells[cursor_pos_1d])) {
         minesweeper_engine_reveal_all_mines(game_state);
-        return LOSE;
+        return MineSweeperResultLose;
     }
 
     uint16_t revealed_delta = board_reveal_flood(board, x, y);
     if(revealed_delta == 0) {
-        return NOOP;
+        return MineSweeperResultNoop;
     }
 
     game_state->rt.tiles_left -= revealed_delta;
 
-    MineSweeperGameResult result = minesweeper_engine_check_win_conditions(game_state);
-    return result == WIN ? WIN : CHANGED;
+    MineSweeperResult result = minesweeper_engine_check_win_conditions(game_state);
+    return result == MineSweeperResultWin ? MineSweeperResultWin : MineSweeperResultChanged;
 }
 
 
-MineSweeperGameResult minesweeper_engine_chord(MineSweeperGameState* game_state, uint16_t x, uint16_t y) {
+MineSweeperResult minesweeper_engine_chord(MineSweeperState* game_state, uint16_t x, uint16_t y) {
     furi_assert(game_state);
 
-    MineSweeperGameBoard* board = &game_state->board;
+    MineSweeperBoard* board = &game_state->board;
 
     uint16_t cursor_pos_1d = board_index(board, x, y);
     uint8_t tile_num = CELL_GET_NEIGHBORS(board->cells[cursor_pos_1d]);
 
     if (!CELL_IS_REVEALED(board->cells[cursor_pos_1d]) || tile_num == 0) {
-        return NOOP;
+        return MineSweeperResultNoop;
     }
     
     uint8_t flagged_neighbors = 0;
@@ -372,7 +372,7 @@ MineSweeperGameResult minesweeper_engine_chord(MineSweeperGameState* game_state,
                 !CELL_IS_FLAGGED(board->cells[neighbor_pos_1d])) {
                     if (CELL_IS_MINE(board->cells[neighbor_pos_1d])) {
                         minesweeper_engine_reveal_all_mines(game_state);
-                        return LOSE;
+                        return MineSweeperResultLose;
                     }
                     uint16_t revealed_delta =
                         board_reveal_flood(board, (uint8_t)dx, (uint8_t)dy);
@@ -383,47 +383,47 @@ MineSweeperGameResult minesweeper_engine_chord(MineSweeperGameState* game_state,
         }
 
         if(revealed_delta_total == 0) {
-            return NOOP;
+            return MineSweeperResultNoop;
         }
 
-        MineSweeperGameResult result = minesweeper_engine_check_win_conditions(game_state);
-        return result == WIN ? WIN : CHANGED;
+        MineSweeperResult result = minesweeper_engine_check_win_conditions(game_state);
+        return result == MineSweeperResultWin ? MineSweeperResultWin : MineSweeperResultChanged;
     }
 
-    return NOOP;
+    return MineSweeperResultNoop;
 }
 
-MineSweeperGameResult minesweeper_engine_check_win_conditions(MineSweeperGameState* game_state) {
+MineSweeperResult minesweeper_engine_check_win_conditions(MineSweeperState* game_state) {
     furi_assert(game_state);
 
     if(game_state->rt.tiles_left == 0 && game_state->rt.flags_left == game_state->rt.mines_left) {
-        game_state->rt.phase = MineGamePhaseWon;
-        return WIN;
+        game_state->rt.phase = MineSweeperPhaseWon;
+        return MineSweeperResultWin;
     }
 
-    return CHANGED;
+    return MineSweeperResultChanged;
 }
 
-MineSweeperGameResult minesweeper_engine_toggle_flag(MineSweeperGameState* game_state, uint16_t x, uint16_t y) {
+MineSweeperResult minesweeper_engine_toggle_flag(MineSweeperState* game_state, uint16_t x, uint16_t y) {
     furi_assert(game_state);
 
-    if(game_state->rt.phase != MineGamePhasePlaying) {
-        return NOOP;
+    if(game_state->rt.phase != MineSweeperPhasePlaying) {
+        return MineSweeperResultNoop;
     }
 
-    MineSweeperGameBoard* board = &game_state->board;
+    MineSweeperBoard* board = &game_state->board;
     uint16_t tile_pos_1d = board_index(board, x, y);
-    MineSweeperGameCell tile = board->cells[tile_pos_1d];
+    MineSweeperCell tile = board->cells[tile_pos_1d];
 
     if(CELL_IS_REVEALED(tile)) {
-        return NOOP;
+        return MineSweeperResultNoop;
     }
 
     bool was_flagged = CELL_IS_FLAGGED(tile);
     bool is_mine = CELL_IS_MINE(tile);
 
     if(!was_flagged && game_state->rt.flags_left == 0) {
-        return NOOP;
+        return MineSweeperResultNoop;
     }
 
     board_toggle_flag(board, x, y);
@@ -443,16 +443,16 @@ MineSweeperGameResult minesweeper_engine_toggle_flag(MineSweeperGameState* game_
     return minesweeper_engine_check_win_conditions(game_state);
 }
 
-MineSweeperGameResult minesweeper_engine_move_cursor(
-    MineSweeperGameState* game_state,
+MineSweeperResult minesweeper_engine_move_cursor(
+    MineSweeperState* game_state,
     int8_t dx,
     int8_t dy
 ) {
     furi_assert(game_state);
 
-    MineSweeperGameBoard* board = &game_state->board;
+    MineSweeperBoard* board = &game_state->board;
     if(board->width == 0 || board->height == 0) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
     int16_t next_col = (int16_t)game_state->rt.cursor_col + dx;
@@ -479,18 +479,18 @@ MineSweeperGameResult minesweeper_engine_move_cursor(
         game_state->rt.cursor_col == (uint8_t)next_col &&
         game_state->rt.cursor_row == (uint8_t)next_row
     ) {
-        return NOOP;
+        return MineSweeperResultNoop;
     }
 
     game_state->rt.cursor_col = (uint8_t)next_col;
     game_state->rt.cursor_row = (uint8_t)next_row;
-    return CHANGED;
+    return MineSweeperResultChanged;
 }
 
-MineSweeperGameResult minesweeper_engine_reveal_all_mines(MineSweeperGameState* game_state) {
+MineSweeperResult minesweeper_engine_reveal_all_mines(MineSweeperState* game_state) {
     furi_assert(game_state);
 
-    MineSweeperGameBoard* board = &game_state->board;
+    MineSweeperBoard* board = &game_state->board;
     uint16_t total = (uint16_t)board->width * board->height;
     bool changed = false;
 
@@ -501,34 +501,34 @@ MineSweeperGameResult minesweeper_engine_reveal_all_mines(MineSweeperGameState* 
         }
     }
 
-    game_state->rt.phase = MineGamePhaseLost;
-    return changed ? CHANGED : NOOP;
+    game_state->rt.phase = MineSweeperPhaseLost;
+    return changed ? MineSweeperResultChanged : MineSweeperResultNoop;
 }
 
-MineSweeperGameResult minesweeper_engine_apply_action(
-    MineSweeperGameState* game_state,
-    MineGameAction action
+MineSweeperResult minesweeper_engine_apply_action(
+    MineSweeperState* game_state,
+    MineSweeperAction action
 ) {
-    MineEngineActionResult detailed = minesweeper_engine_apply_action_ex(game_state, action);
+    MineSweeperActionResult detailed = minesweeper_engine_apply_action_ex(game_state, action);
     return detailed.result;
 }
 
-static MineMoveOutcome minesweeper_engine_classify_move_outcome(
-    const MineSweeperGameState* game_state,
+static MineSweeperMoveOutcome minesweeper_engine_classify_move_outcome(
+    const MineSweeperState* game_state,
     uint8_t prev_col,
     uint8_t prev_row,
     int8_t dx,
     int8_t dy,
-    MineSweeperGameResult move_result) {
+    MineSweeperResult move_result) {
     furi_assert(game_state);
 
-    if(move_result != CHANGED && move_result != NOOP) {
-        return MineMoveOutcomeNone;
+    if(move_result != MineSweeperResultChanged && move_result != MineSweeperResultNoop) {
+        return MineSweeperMoveOutcomeNone;
     }
 
-    const MineSweeperGameBoard* board = &game_state->board;
+    const MineSweeperBoard* board = &game_state->board;
     if(board->width == 0 || board->height == 0) {
-        return MineMoveOutcomeNone;
+        return MineSweeperMoveOutcomeNone;
     }
 
     int16_t raw_next_col = (int16_t)prev_col + dx;
@@ -537,42 +537,42 @@ static MineMoveOutcome minesweeper_engine_classify_move_outcome(
                          raw_next_row < 0 || raw_next_row >= board->height;
 
     if(game_state->config.wrap_enabled) {
-        if(move_result == CHANGED && attempted_oob) {
-            return MineMoveOutcomeWrapped;
-        } else if(move_result == CHANGED) {
-            return MineMoveOutcomeMoved;
+        if(move_result == MineSweeperResultChanged && attempted_oob) {
+            return MineSweeperMoveOutcomeWrapped;
+        } else if(move_result == MineSweeperResultChanged) {
+            return MineSweeperMoveOutcomeMoved;
         }
-        return MineMoveOutcomeNone;
+        return MineSweeperMoveOutcomeNone;
     }
 
-    if(move_result == NOOP && attempted_oob) {
-        return MineMoveOutcomeBlocked;
-    } else if(move_result == CHANGED) {
-        return MineMoveOutcomeMoved;
+    if(move_result == MineSweeperResultNoop && attempted_oob) {
+        return MineSweeperMoveOutcomeBlocked;
+    } else if(move_result == MineSweeperResultChanged) {
+        return MineSweeperMoveOutcomeMoved;
     }
 
-    return MineMoveOutcomeNone;
+    return MineSweeperMoveOutcomeNone;
 }
 
-MineEngineActionResult minesweeper_engine_apply_action_ex(
-    MineSweeperGameState* game_state,
-    MineGameAction action
+MineSweeperActionResult minesweeper_engine_apply_action_ex(
+    MineSweeperState* game_state,
+    MineSweeperAction action
 ) {
     furi_assert(game_state);
 
-    MineEngineActionResult detailed = {
-        .result = INVALID,
-        .move_outcome = MineMoveOutcomeNone,
+    MineSweeperActionResult detailed = {
+        .result = MineSweeperResultInvalid,
+        .move_outcome = MineSweeperMoveOutcomeNone,
     };
 
-    if(action.type != MineGameActionNewGame &&
-       game_state->rt.phase != MineGamePhasePlaying) {
-        detailed.result = NOOP;
+    if(action.type != MineSweeperActionNewGame &&
+       game_state->rt.phase != MineSweeperPhasePlaying) {
+        detailed.result = MineSweeperResultNoop;
         return detailed;
     }
 
     switch(action.type) {
-    case MineGameActionMove: {
+    case MineSweeperActionMove: {
         uint8_t prev_col = game_state->rt.cursor_col;
         uint8_t prev_row = game_state->rt.cursor_row;
         detailed.result = minesweeper_engine_move_cursor(game_state, action.dx, action.dy);
@@ -581,98 +581,98 @@ MineEngineActionResult minesweeper_engine_apply_action_ex(
         return detailed;
     }
 
-    case MineGameActionReveal:
+    case MineSweeperActionReveal:
         detailed.result = minesweeper_engine_reveal(
             game_state,
             game_state->rt.cursor_col,
             game_state->rt.cursor_row);
         return detailed;
 
-    case MineGameActionFlag:
+    case MineSweeperActionFlag:
         detailed.result = minesweeper_engine_toggle_flag(
             game_state,
             game_state->rt.cursor_col,
             game_state->rt.cursor_row);
         return detailed;
 
-    case MineGameActionChord:
+    case MineSweeperActionChord:
         detailed.result = minesweeper_engine_chord(
             game_state,
             game_state->rt.cursor_col,
             game_state->rt.cursor_row);
         return detailed;
 
-    case MineGameActionNewGame:
+    case MineSweeperActionNewGame:
         minesweeper_engine_new_game(game_state);
-        detailed.result = CHANGED;
+        detailed.result = MineSweeperResultChanged;
         return detailed;
 
     default:
-        detailed.result = INVALID;
+        detailed.result = MineSweeperResultInvalid;
         return detailed;
     }
 }
 
-MineSweeperGameResult minesweeper_engine_set_config(
-    MineSweeperGameState* game_state,
-    const MineGameConfig* config
+MineSweeperResult minesweeper_engine_set_config(
+    MineSweeperState* game_state,
+    const MineSweeperConfig* config
 ) {
     furi_assert(game_state);
 
     if(!config_is_valid(config)) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
     game_state->config = *config;
     game_state->board.width = config->width;
     game_state->board.height = config->height;
 
-    return CHANGED;
+    return MineSweeperResultChanged;
 }
 
-MineSweeperGameResult minesweeper_engine_set_runtime(
-    MineSweeperGameState* game_state,
-    const MineGameRuntime* runtime
+MineSweeperResult minesweeper_engine_set_runtime(
+    MineSweeperState* game_state,
+    const MineSweeperRuntime* runtime
 ) {
     furi_assert(game_state);
 
     if(!runtime_is_valid_for_board(&game_state->board, runtime)) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
     game_state->rt = *runtime;
-    return CHANGED;
+    return MineSweeperResultChanged;
 }
 
-MineSweeperGameResult minesweeper_engine_validate_state(const MineSweeperGameState* game_state) {
+MineSweeperResult minesweeper_engine_validate_state(const MineSweeperState* game_state) {
     furi_assert(game_state);
 
-    const MineSweeperGameBoard* board = &game_state->board;
-    const MineGameRuntime* runtime = &game_state->rt;
-    const MineGameConfig* config = &game_state->config;
+    const MineSweeperBoard* board = &game_state->board;
+    const MineSweeperRuntime* runtime = &game_state->rt;
+    const MineSweeperConfig* config = &game_state->config;
 
     if(!config_is_valid(config)) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
     if(board->width != config->width || board->height != config->height) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
     uint16_t total = (uint16_t)board->width * board->height;
     if(total == 0 || total > BOARD_MAX_TILES) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
     if(board->mine_count > total) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
     uint16_t mine_count_actual = 0;
     uint16_t revealed_safe_tiles = 0;
 
     for(uint16_t i = 0; i < total; ++i) {
-        MineSweeperGameCell cell = board->cells[i];
+        MineSweeperCell cell = board->cells[i];
 
         if(CELL_IS_MINE(cell)) {
             mine_count_actual++;
@@ -682,22 +682,22 @@ MineSweeperGameResult minesweeper_engine_validate_state(const MineSweeperGameSta
     }
 
     if(mine_count_actual != board->mine_count) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
     if(!runtime_is_valid_for_board(board, runtime)) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
     uint16_t safe_total = total - board->mine_count;
     if((uint16_t)(runtime->tiles_left + revealed_safe_tiles) != safe_total) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
-    if(runtime->phase == MineGamePhaseWon &&
+    if(runtime->phase == MineSweeperPhaseWon &&
        !(runtime->tiles_left == 0 && runtime->flags_left == runtime->mines_left)) {
-        return INVALID;
+        return MineSweeperResultInvalid;
     }
 
-    return NOOP;
+    return MineSweeperResultNoop;
 }

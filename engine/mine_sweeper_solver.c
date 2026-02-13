@@ -3,7 +3,7 @@
 #include <furi.h>
 
 bool check_board_with_solver(
-    MineSweeperGameBoard* board
+    MineSweeperBoard* board
 ) {
     furi_assert(board);
 
@@ -34,7 +34,7 @@ bool check_board_with_solver(
             const Point curr_pos = pointobj_get_point(pos);
             uint16_t curr_pos_1d = board_index(board, curr_pos.x, curr_pos.y);
             
-            const MineSweeperGameCell cell  = board->cells[curr_pos_1d];
+            const MineSweeperCell cell  = board->cells[curr_pos_1d];
             uint8_t tile_number = CELL_GET_NEIGHBORS(cell);
             uint8_t hidden_neighbors  = 0;
             uint8_t flagged_neighbors = 0;
@@ -51,7 +51,7 @@ bool check_board_with_solver(
                 }
 
                 const int16_t neighbor_pos_1d = board_index(board, dx, dy);
-                const MineSweeperGameCell neighbor_cell = board->cells[neighbor_pos_1d];
+                const MineSweeperCell neighbor_cell = board->cells[neighbor_pos_1d];
 
                 if (CELL_IS_FLAGGED(neighbor_cell)) {
                     flagged_neighbors++;
@@ -77,7 +77,7 @@ bool check_board_with_solver(
                         continue;
 
                     const int16_t neighbor_pos_1d = board_index(board, dx, dy);
-                    const MineSweeperGameCell neighbor_cell = board->cells[neighbor_pos_1d];
+                    const MineSweeperCell neighbor_cell = board->cells[neighbor_pos_1d];
 
                     if (!CELL_IS_REVEALED(neighbor_cell) &&
                         !CELL_IS_FLAGGED(neighbor_cell)) {
@@ -102,7 +102,7 @@ bool check_board_with_solver(
                         continue;
 
                     const int16_t neighbor_pos_1d = board_index(board, dx, dy);
-                    const MineSweeperGameCell neighbor_cell = board->cells[neighbor_pos_1d];
+                    const MineSweeperCell neighbor_cell = board->cells[neighbor_pos_1d];
 
                     if (!CELL_IS_REVEALED(neighbor_cell) &&
                         !CELL_IS_FLAGGED(neighbor_cell)) {
@@ -137,7 +137,7 @@ bool check_board_with_solver(
 }
 
 void bfs_tile_clear_solver(
-    MineSweeperGameBoard* board,
+    MineSweeperBoard* board,
     uint16_t x,
     uint16_t y,
     point_deq_t* edges,
@@ -161,7 +161,7 @@ void bfs_tile_clear_solver(
         point_deq_pop_front(&pos, deq);
         Point curr_pos = pointobj_get_point(pos);
         uint16_t curr_pos_1d = board_index(board, curr_pos.x, curr_pos.y);
-        MineSweeperGameCell curr_cell = board->cells[curr_pos_1d];
+        MineSweeperCell curr_cell = board->cells[curr_pos_1d];
 
         if (point_set_cget(*visited, pos) != NULL ||
             CELL_IS_REVEALED(curr_cell) ||

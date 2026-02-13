@@ -5,38 +5,38 @@
 #include <stdbool.h>
 
 typedef enum {
-    MineGamePhasePlaying = 0,
-    MineGamePhaseWon,
-    MineGamePhaseLost,
-} MineGamePhase;
+    MineSweeperPhasePlaying = 0,
+    MineSweeperPhaseWon,
+    MineSweeperPhaseLost,
+} MineSweeperPhase;
 
 typedef enum {
-    MineGameActionMove = 0,
-    MineGameActionReveal,
-    MineGameActionFlag,
-    MineGameActionChord,
-    MineGameActionNewGame,
-} MineGameActionType;
+    MineSweeperActionMove = 0,
+    MineSweeperActionReveal,
+    MineSweeperActionFlag,
+    MineSweeperActionChord,
+    MineSweeperActionNewGame,
+} MineSweeperActionType;
 
 typedef enum {
-    MineMoveOutcomeNone = 0,
-    MineMoveOutcomeMoved,
-    MineMoveOutcomeWrapped,
-    MineMoveOutcomeBlocked,
-} MineMoveOutcome;
+    MineSweeperMoveOutcomeNone = 0,
+    MineSweeperMoveOutcomeMoved,
+    MineSweeperMoveOutcomeWrapped,
+    MineSweeperMoveOutcomeBlocked,
+} MineSweeperMoveOutcome;
 
 typedef enum {
-    NOOP,
-    CHANGED,
-    WIN,
-    LOSE,
-    INVALID
-} MineSweeperGameResult;
+    MineSweeperResultNoop,
+    MineSweeperResultChanged,
+    MineSweeperResultWin,
+    MineSweeperResultLose,
+    MineSweeperResultInvalid
+} MineSweeperResult;
 
 typedef struct {
-    MineSweeperGameResult result;
-    MineMoveOutcome move_outcome;
-} MineEngineActionResult;
+    MineSweeperResult result;
+    MineSweeperMoveOutcome move_outcome;
+} MineSweeperActionResult;
 
 /* ---- Cell Layout ----
  * bit 0 : mine
@@ -45,7 +45,7 @@ typedef struct {
  * bits 3–6 : neighbor count (0–8)
  * bit 7 : reserved
  */
-typedef uint8_t MineSweeperGameCell;
+typedef uint8_t MineSweeperCell;
 
 /* Bit masks */
 #define CELL_MINE_MASK        (0x01u)
@@ -88,8 +88,8 @@ typedef struct {
     uint8_t width;
     uint8_t height;
     uint16_t mine_count;
-    MineSweeperGameCell cells[BOARD_MAX_TILES];
-} MineSweeperGameBoard;
+    MineSweeperCell cells[BOARD_MAX_TILES];
+} MineSweeperBoard;
 
 typedef struct {
     uint8_t width;
@@ -97,7 +97,7 @@ typedef struct {
     uint8_t difficulty;
     bool ensure_solvable;
     bool wrap_enabled;
-} MineGameConfig;
+} MineSweeperConfig;
 
 typedef struct {
     uint8_t cursor_row;
@@ -106,74 +106,74 @@ typedef struct {
     uint16_t flags_left;
     uint16_t tiles_left;
     uint32_t start_tick;
-    MineGamePhase phase;
-} MineGameRuntime;
+    MineSweeperPhase phase;
+} MineSweeperRuntime;
 
 typedef struct {
-    MineSweeperGameBoard board;
-    MineGameConfig config;
-    MineGameRuntime rt;
-} MineSweeperGameState;
+    MineSweeperBoard board;
+    MineSweeperConfig config;
+    MineSweeperRuntime rt;
+} MineSweeperState;
 
 typedef struct {
-    MineGameActionType type;
+    MineSweeperActionType type;
     int8_t dx;
     int8_t dy;
-} MineGameAction;
+} MineSweeperAction;
 
 extern const int8_t neighbor_offsets[8][2];
 
 /* ---- BOARD API ---- */
-uint16_t board_index(const MineSweeperGameBoard* board, uint8_t x, uint8_t y);
+uint16_t board_index(const MineSweeperBoard* board, uint8_t x, uint8_t y);
 
-uint8_t board_x(const MineSweeperGameBoard* board, uint16_t i);
+uint8_t board_x(const MineSweeperBoard* board, uint16_t i);
 
-uint8_t board_y(const MineSweeperGameBoard* board, uint16_t i);
+uint8_t board_y(const MineSweeperBoard* board, uint16_t i);
 
-bool board_in_bounds(const MineSweeperGameBoard* board, int8_t x, int8_t y);
+bool board_in_bounds(const MineSweeperBoard* board, int8_t x, int8_t y);
 
-void board_init(MineSweeperGameBoard* board, uint8_t width, uint8_t height);
+void board_init(MineSweeperBoard* board, uint8_t width, uint8_t height);
 
-bool board_place_mine(MineSweeperGameBoard* board, uint8_t x, uint8_t y);
+bool board_place_mine(MineSweeperBoard* board, uint8_t x, uint8_t y);
 
-void board_compute_neighbor_counts(MineSweeperGameBoard* board);
+void board_compute_neighbor_counts(MineSweeperBoard* board);
 
-bool board_reveal_cell(MineSweeperGameBoard* board, uint8_t x, uint8_t y);
+bool board_reveal_cell(MineSweeperBoard* board, uint8_t x, uint8_t y);
 
-uint16_t board_reveal_flood(MineSweeperGameBoard* board, uint8_t x, uint8_t y);
+uint16_t board_reveal_flood(MineSweeperBoard* board, uint8_t x, uint8_t y);
 
-void board_toggle_flag(MineSweeperGameBoard* board, uint8_t x, uint8_t y);
+void board_toggle_flag(MineSweeperBoard* board, uint8_t x, uint8_t y);
 
 
 /* ---- ENGINE API ---- */
 
-void minesweeper_engine_new_game(MineSweeperGameState* game_state);
+void minesweeper_engine_new_game(MineSweeperState* game_state);
 
-MineSweeperGameResult minesweeper_engine_reveal(MineSweeperGameState* game_state, uint16_t x, uint16_t y);
+MineSweeperResult minesweeper_engine_reveal(MineSweeperState* game_state, uint16_t x, uint16_t y);
 
-MineSweeperGameResult minesweeper_engine_chord(MineSweeperGameState* game_state, uint16_t x, uint16_t y);
+MineSweeperResult minesweeper_engine_chord(MineSweeperState* game_state, uint16_t x, uint16_t y);
 
-MineSweeperGameResult minesweeper_engine_toggle_flag(MineSweeperGameState* game_state, uint16_t x, uint16_t y);
+MineSweeperResult minesweeper_engine_toggle_flag(MineSweeperState* game_state, uint16_t x, uint16_t y);
 
-MineSweeperGameResult minesweeper_engine_move_cursor(MineSweeperGameState* game_state, int8_t dx, int8_t dy);
+MineSweeperResult minesweeper_engine_move_cursor(MineSweeperState* game_state, int8_t dx, int8_t dy);
 
-MineSweeperGameResult minesweeper_engine_reveal_all_mines(MineSweeperGameState* game_state);
+MineSweeperResult minesweeper_engine_reveal_all_mines(MineSweeperState* game_state);
 
-MineSweeperGameResult minesweeper_engine_check_win_conditions(MineSweeperGameState* game_state);
+MineSweeperResult minesweeper_engine_check_win_conditions(MineSweeperState* game_state);
 
-MineSweeperGameResult minesweeper_engine_apply_action(MineSweeperGameState* game_state, MineGameAction action);
+MineSweeperResult minesweeper_engine_apply_action(MineSweeperState* game_state, MineSweeperAction action);
 
-MineEngineActionResult minesweeper_engine_apply_action_ex(MineSweeperGameState* game_state, MineGameAction action);
+MineSweeperActionResult minesweeper_engine_apply_action_ex(MineSweeperState* game_state, MineSweeperAction action);
 
-MineSweeperGameResult minesweeper_engine_set_config(
-    MineSweeperGameState* game_state,
-    const MineGameConfig* config);
+MineSweeperResult minesweeper_engine_set_config(
+    MineSweeperState* game_state,
+    const MineSweeperConfig* config);
 
-MineSweeperGameResult minesweeper_engine_set_runtime(
-    MineSweeperGameState* game_state,
-    const MineGameRuntime* runtime);
+MineSweeperResult minesweeper_engine_set_runtime(
+    MineSweeperState* game_state,
+    const MineSweeperRuntime* runtime);
 
-MineSweeperGameResult minesweeper_engine_validate_state(const MineSweeperGameState* game_state);
+MineSweeperResult minesweeper_engine_validate_state(const MineSweeperState* game_state);
 
 
 #endif
