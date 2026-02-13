@@ -134,8 +134,6 @@ bool board_in_bounds(const MineSweeperBoard* board, int8_t x, int8_t y);
 
 void board_init(MineSweeperBoard* board, uint8_t width, uint8_t height);
 
-bool board_place_mine(MineSweeperBoard* board, uint8_t x, uint8_t y);
-
 void board_compute_neighbor_counts(MineSweeperBoard* board);
 
 bool board_reveal_cell(MineSweeperBoard* board, uint8_t x, uint8_t y);

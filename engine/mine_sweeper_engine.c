@@ -142,21 +142,6 @@ void board_init(
     board_clear(board);
 }
 
-bool board_place_mine(
-    MineSweeperBoard* board,
-    uint8_t x,
-    uint8_t y
-) {
-    uint16_t i = board_index(board, x, y);
-
-    if (CELL_IS_MINE(board->cells[i])) return false;
-
-    CELL_SET_MINE(board->cells[i]);
-    board->mine_count++;
-
-    return true;
-}
-
 void board_compute_neighbor_counts(MineSweeperBoard* board) {
     for (uint8_t y = 0; y < board->height; ++y) {
         for (uint8_t x = 0; x < board->width; ++x) {
