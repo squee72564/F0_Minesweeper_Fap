@@ -229,7 +229,7 @@ uint16_t board_reveal_flood(MineSweeperGameBoard* board, uint8_t x, uint8_t y) {
 
         board_reveal_cell(board, curr_pos.x, curr_pos.y);
 
-        point_set_add(visited, pos);
+        point_set_push(visited, pos);
 
         cleared_tiles++;
 
