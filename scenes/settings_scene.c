@@ -1,5 +1,10 @@
-#include "../minesweeper.h"
-#include "../views/minesweeper_game_screen.h"
+#include <inttypes.h>
+
+#include "minesweeper.h"
+#include "views/minesweeper_game_screen.h"
+#include "scenes/minesweeper_scene.h"
+#include "helpers/mine_sweeper_storage.h"
+#include "helpers/mine_sweeper_config.h"
 
 typedef enum {
     MineSweeperSettingsScreenDifficultyTypeEasy,

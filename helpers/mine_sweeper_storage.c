@@ -1,4 +1,8 @@
-#include "mine_sweeper_storage.h"
+#include <flipper_format/flipper_format.h>
+
+#include "minesweeper.h"
+#include "helpers/mine_sweeper_config.h"
+#include "helpers/mine_sweeper_storage.h"
 
 static inline uint32_t clamp(uint32_t min, uint32_t max, uint32_t val) {
     return (val > max) ? max : (val < min) ? min : val;

@@ -1,5 +1,5 @@
-#include "mine_sweeper_led.h"
-#include "../minesweeper.h"
+#include "minesweeper.h"
+#include "helpers/mine_sweeper_led.h"
 
 static inline MineSweeperApp* mine_sweeper_led_get_app(void* context) {
     furi_assert(context);

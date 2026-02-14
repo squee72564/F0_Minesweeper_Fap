@@ -1,4 +1,7 @@
-#include "../minesweeper.h"
+#include "minesweeper.h"
+#include "helpers/mine_sweeper_config.h"
+#include "scenes/minesweeper_scene.h"
+
 static const char* info_string= "--   GAME INFO BELOW   --\n\n"
                                 "1. Press OK to clear a tile.\n\n"
                                 "2. Hold OK on a numbered tile\n"

@@ -1,16 +1,8 @@
 #ifndef MINESWEEPER_H
 #define MINESWEEPER_H
 
-#include <string.h> // memset
-#include <inttypes.h> // PRIu8 & SCNu8
+#include <stdint.h>
 
-#include <furi.h>
-#include <furi_hal.h>
-#include <input/input.h>
-
-#include <notification/notification_messages.h>
-
-#include <gui/gui.h>
 #include <gui/view_dispatcher.h>
 #include <gui/scene_manager.h>
 #include <gui/modules/loading.h>
@@ -18,13 +10,10 @@
 #include <gui/modules/variable_item_list.h>
 #include <gui/modules/text_box.h>
 
-#include "scenes/minesweeper_scene.h"
+#include <notification/notification_messages.h>
+
 #include "views/start_screen.h"
 #include "views/minesweeper_game_screen.h"
-#include "helpers/mine_sweeper_storage.h"
-#include "minesweeper_redux_icons.h"
-
-#define TAG "Mine Sweeper Application"
 
 // This is a helper struct for the settings view/scene
 typedef struct {

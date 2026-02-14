@@ -1,4 +1,5 @@
-#include "../minesweeper.h"
+#include "minesweeper.h"
+#include "scenes/minesweeper_scene.h"
 
 typedef enum {
     MineSweeperSceneStartScreenContinueEvent,

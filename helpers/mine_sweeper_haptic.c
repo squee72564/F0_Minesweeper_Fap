@@ -1,5 +1,5 @@
-#include "mine_sweeper_haptic.h"
-#include "../minesweeper.h"
+#include "minesweeper.h"
+#include "helpers/mine_sweeper_haptic.h"
 
 static const NotificationSequence sequence_minesweeper_haptic_short = {
     &message_vibro_on,

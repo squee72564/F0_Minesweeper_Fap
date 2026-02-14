@@ -1,5 +1,5 @@
-#include "../minesweeper.h"
-#include "../views/minesweeper_game_screen.h"
+#include "minesweeper.h"
+#include "scenes/minesweeper_scene.h"
 
 #include <input/input.h>
 

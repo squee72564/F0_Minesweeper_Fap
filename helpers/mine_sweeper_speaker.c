@@ -1,5 +1,5 @@
-#include "mine_sweeper_speaker.h"
-#include "../minesweeper.h"
+#include "minesweeper.h"
+#include "helpers/mine_sweeper_speaker.h"
 
 #include <notification/notification_messages.h>
 #include <notification/notification_messages_notes.h>

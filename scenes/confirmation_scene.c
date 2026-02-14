@@ -1,4 +1,6 @@
-#include "../minesweeper.h"
+#include "minesweeper.h"
+#include "helpers/mine_sweeper_storage.h"
+#include "scenes/minesweeper_scene.h"
 
 static void confirmation_scene_dialog_callback(DialogExResult result, void* context) {
     furi_assert(context);

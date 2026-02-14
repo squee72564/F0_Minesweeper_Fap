@@ -1,5 +1,10 @@
 #include "minesweeper.h"
 
+#include <string.h> //memset
+#include "scenes/minesweeper_scene.h"
+#include "helpers/mine_sweeper_storage.h"
+#include "helpers/mine_sweeper_config.h"
+
 static bool minesweeper_custom_event_callback(void* context, uint32_t custom_event) {
     furi_assert(context);
     MineSweeperApp* app = (MineSweeperApp*)context;
