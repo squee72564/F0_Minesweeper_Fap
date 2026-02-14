@@ -1,4 +1,5 @@
 #include "mine_sweeper_engine.h"
+#include "mine_sweeper_solver.h"
 #include "mstarlib_helpers.h"
 
 #include <furi_hal.h>
@@ -9,6 +10,8 @@ static const float difficulty_multiplier[3] = {
     0.17f,
     0.19f,
 };
+
+static void board_clear(MineSweeperBoard* board);
 
 // Bias Free Uniform Random Sample In Range [0, upper_exclusion]
 static uint16_t random_uniform_u16(uint16_t upper_exclusion) {
@@ -41,6 +44,51 @@ static void board_shuffle(MineSweeperBoard* board) {
         board->cells[i] = board->cells[j];
         board->cells[j] = tmp;
     }
+}
+
+static void board_ensure_safe_start(MineSweeperBoard* board, uint8_t safe_x, uint8_t safe_y) {
+    furi_assert(board);
+
+    uint16_t total = (uint16_t)board->width * board->height;
+    if(total == 0) return;
+
+    uint16_t safe_i = board_index(board, safe_x, safe_y);
+    if(!CELL_IS_MINE(board->cells[safe_i])) return;
+
+    for(uint16_t i = 0; i < total; ++i) {
+        if(i == safe_i) continue;
+        if(CELL_IS_MINE(board->cells[i])) continue;
+
+        MineSweeperCell tmp = board->cells[safe_i];
+        board->cells[safe_i] = board->cells[i];
+        board->cells[i] = tmp;
+        return;
+    }
+}
+
+static void board_clear_solver_marks(MineSweeperBoard* board) {
+    furi_assert(board);
+
+    uint16_t total = (uint16_t)board->width * board->height;
+    for(uint16_t i = 0; i < total; ++i) {
+        board->cells[i] &= (uint8_t) ~(CELL_REVEALED_MASK | CELL_FLAG_MASK);
+    }
+}
+
+static void board_generate_candidate(MineSweeperBoard* board, uint16_t mine_count) {
+    furi_assert(board);
+
+    board_clear(board);
+
+    for(uint16_t i = 0; i < mine_count; ++i) {
+        CELL_SET_MINE(board->cells[i]);
+    }
+
+    board->mine_count = mine_count;
+
+    board_shuffle(board);
+    board_ensure_safe_start(board, 0, 0);
+    board_compute_neighbor_counts(board);
 }
 
 static void board_clear(MineSweeperBoard* board) {
@@ -264,20 +312,18 @@ void minesweeper_engine_new_game(MineSweeperState* game_state) {
         : game_state->config.difficulty;
 
     uint16_t number_mines = total_cells * difficulty_multiplier[difficulty];
+    bool is_solvable = false;
 
-    // Clear board and randomize mines
-    board_clear(&game_state->board);
-    
-    for (uint16_t i = 0; i < number_mines; ++i) {
-        CELL_SET_MINE(game_state->board.cells[i]);
-    }
+    do {
+        board_generate_candidate(&game_state->board, number_mines);
 
-    game_state->board.mine_count = number_mines;
+        if(!game_state->config.ensure_solvable) {
+            break;
+        }
 
-    board_shuffle(&game_state->board);
-
-    // Set the number of neighboring mines for each cell
-    board_compute_neighbor_counts(&game_state->board);
+        is_solvable = check_board_with_solver(&game_state->board);
+        board_clear_solver_marks(&game_state->board);
+    } while(!is_solvable);
 
     game_state->rt.tiles_left = total_cells - number_mines;
     game_state->rt.flags_left = number_mines;
