@@ -33,6 +33,8 @@ static uint16_t random_uniform_u16(uint16_t upper_exclusion) {
 
 // Fisher-Yates Shuffle
 static void board_shuffle(MineSweeperBoard* board) {
+    furi_assert(board);
+
     uint16_t total = (uint16_t)board->width * board->height;
     if(total <= 1u) return;
 
@@ -151,6 +153,7 @@ uint16_t board_index(
     const uint8_t x,
     const uint8_t y
 ) {
+    furi_assert(board);
     return (uint16_t)y * board->width + x;
 }
 
@@ -158,6 +161,7 @@ uint8_t board_x(
     const MineSweeperBoard* board,
     uint16_t i
 ) {
+    furi_assert(board);
     return i % board->width;
 }
 
@@ -165,6 +169,7 @@ uint8_t board_y(
     const MineSweeperBoard* board,
     uint16_t i
 ) {
+    furi_assert(board);
     return i / board->width;
 }
 
@@ -173,6 +178,7 @@ bool board_in_bounds(
     int8_t x,
     int8_t y
 ) {
+    furi_assert(board);
     return (x >= 0) && (y >= 0) &&
            (x < board->width) &&
            (y < board->height);
@@ -183,6 +189,7 @@ void board_init(
     uint8_t width,
     uint8_t height
 ) {
+    furi_assert(board);
     board->width = width;
     board->height = height;
     board->mine_count = 0;
@@ -191,6 +198,7 @@ void board_init(
 }
 
 void board_compute_neighbor_counts(MineSweeperBoard* board) {
+    furi_assert(board);
     for (uint8_t y = 0; y < board->height; ++y) {
         for (uint8_t x = 0; x < board->width; ++x) {
             
@@ -221,6 +229,7 @@ bool board_reveal_cell(
     uint8_t x,
     uint8_t y
 ) {
+    furi_assert(board);
     uint16_t i = board_index(board, x, y);
 
     if (CELL_IS_REVEALED(board->cells[i]) ||
@@ -291,6 +300,7 @@ void board_toggle_flag(
     uint8_t x,
     uint8_t y
 ) {
+    furi_assert(board);
     uint16_t i = board_index(board, x, y);
 
     if(CELL_IS_REVEALED(board->cells[i]))
@@ -329,13 +339,8 @@ void minesweeper_engine_new_game(MineSweeperState* game_state) {
     game_state->rt.flags_left = number_mines;
     game_state->rt.mines_left = number_mines;
     game_state->rt.phase = MineSweeperPhasePlaying;
-
-    if(game_state->rt.cursor_col >= game_state->board.width) {
-        game_state->rt.cursor_col = 0;
-    }
-    if(game_state->rt.cursor_row >= game_state->board.height) {
-        game_state->rt.cursor_row = 0;
-    }
+    game_state->rt.cursor_col = 0;
+    game_state->rt.cursor_row = 0;
 }
 
 MineSweeperResult minesweeper_engine_reveal(MineSweeperState* game_state, uint16_t x, uint16_t y) {
@@ -540,6 +545,7 @@ MineSweeperResult minesweeper_engine_apply_action(
     MineSweeperState* game_state,
     MineSweeperAction action
 ) {
+    furi_assert(game_state);
     MineSweeperActionResult detailed = minesweeper_engine_apply_action_ex(game_state, action);
     return detailed.result;
 }
