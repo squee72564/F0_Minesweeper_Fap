@@ -157,7 +157,7 @@ bool start_screen_view_input_callback(InputEvent* event, void* context) {
     return consumed;
 }
 
-StartScreen* start_screen_alloc() {
+StartScreen* start_screen_alloc(void) {
     StartScreen* start_screen = (StartScreen*)malloc(sizeof(StartScreen));
 
     start_screen->view = view_alloc();

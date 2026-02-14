@@ -25,7 +25,7 @@ static void minesweeper_tick_event_callback(void* context) {
 
 static void app_free(MineSweeperApp* app);
 
-static MineSweeperApp* app_alloc() { 
+static MineSweeperApp* app_alloc(void) {
     MineSweeperApp* app = (MineSweeperApp*)malloc(sizeof(MineSweeperApp));
     if(!app) {
         FURI_LOG_E(TAG, "Failed to allocate app struct");

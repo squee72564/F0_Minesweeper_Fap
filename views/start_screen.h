@@ -29,7 +29,7 @@ typedef void (*StartScreenDrawCallback)(Canvas* canvas, void* _model);
  *
  * @return      StartScreen view instance 
  */
-StartScreen* start_screen_alloc();
+StartScreen* start_screen_alloc(void);
 
 /** Deinitialize and free Start Screen view
  *

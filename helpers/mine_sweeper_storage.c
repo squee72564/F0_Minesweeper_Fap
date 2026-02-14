@@ -8,11 +8,11 @@ static inline uint32_t clamp(uint32_t min, uint32_t max, uint32_t val) {
     return (val > max) ? max : (val < min) ? min : val;
 }
 
-static Storage* mine_sweeper_open_storage() {
+static Storage* mine_sweeper_open_storage(void) {
     return furi_record_open(RECORD_STORAGE);
 }
 
-static void mine_sweeper_close_storage() {
+static void mine_sweeper_close_storage(void) {
     furi_record_close(RECORD_STORAGE);
 }
 
