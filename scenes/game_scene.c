@@ -247,6 +247,11 @@ bool minesweeper_scene_game_screen_on_event(void* context, SceneManagerEvent eve
             : handle_gameover_inputs(app, event);
     }
 
+    if(event.type == SceneManagerEventTypeTick) {
+        mine_sweeper_game_screen_update_clock(app->game_screen);
+        return true;
+    }
+
     return false;
 }
 

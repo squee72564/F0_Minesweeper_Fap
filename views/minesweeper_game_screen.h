@@ -58,6 +58,7 @@ void mine_sweeper_game_screen_free(MineSweeperGameScreen* instance);
 void mine_sweeper_game_screen_reset(MineSweeperGameScreen* instance);
 
 void mine_sweeper_game_screen_reset_clock(MineSweeperGameScreen* instance);
+void mine_sweeper_game_screen_update_clock(MineSweeperGameScreen* instance);
 
 /** Get MineSweeperGameScreen view
  *

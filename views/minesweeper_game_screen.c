@@ -37,8 +37,37 @@ typedef struct {
     uint8_t bottom_boundary;
 
     FuriString* info_str;
-    // some data to track elapsed time?
+    uint32_t elapsed_ms;
+    uint32_t elapsed_seconds;
+    uint32_t last_tick;
+    bool timer_running;
 } MineSweeperGameScreenModel;
+
+static uint32_t mine_sweeper_game_screen_get_elapsed_seconds(
+    const MineSweeperGameScreenModel* model) {
+    furi_assert(model);
+
+    uint32_t elapsed_ms = model->elapsed_ms;
+    if(model->timer_running) {
+        elapsed_ms += furi_get_tick() - model->last_tick;
+    }
+
+    return elapsed_ms / 1000u;
+}
+
+static void mine_sweeper_game_screen_format_elapsed(FuriString* out, uint32_t elapsed_seconds) {
+    furi_assert(out);
+
+    const uint32_t max_display_seconds = (99u * 60u) + 59u;
+    if(elapsed_seconds > max_display_seconds) {
+        furi_string_set_str(out, "99:59+");
+        return;
+    }
+
+    const uint32_t minutes = elapsed_seconds / 60u;
+    const uint32_t seconds = elapsed_seconds % 60u;
+    furi_string_printf(out, "%02lu:%02lu", (unsigned long)minutes, (unsigned long)seconds);
+}
 
 static void move_projection_boundary(
     MineSweeperState* game_state,
@@ -65,13 +94,40 @@ static void move_projection_boundary(
 }
 
 static void mine_sweeper_game_screen_view_enter(void* context) {
-    UNUSED(context);
-    // Potentially do something with timer to show elapsed time?
+    furi_assert(context);
+    MineSweeperGameScreen* instance = context;
+    const uint32_t now = furi_get_tick();
+
+    with_view_model(
+        instance->view,
+        MineSweeperGameScreenModel * model,
+        {
+            if(model->game_state && model->game_state->rt.phase == MineSweeperPhasePlaying) {
+                model->timer_running = true;
+                model->last_tick = now;
+            } else {
+                model->timer_running = false;
+            }
+        },
+        true);
 }
 
 static void mine_sweeper_game_screen_view_exit(void* context) {
-    UNUSED(context);
-    // Potentially do something with timer to show elapsed time?
+    furi_assert(context);
+    MineSweeperGameScreen* instance = context;
+    const uint32_t now = furi_get_tick();
+
+    with_view_model(
+        instance->view,
+        MineSweeperGameScreenModel * model,
+        {
+            if(model->timer_running) {
+                model->elapsed_ms += now - model->last_tick;
+                model->elapsed_seconds = model->elapsed_ms / 1000u;
+                model->timer_running = false;
+            }
+        },
+        false);
 }
 
 static bool mine_sweeper_game_screen_input_callback(InputEvent* event, void* context) {
@@ -263,16 +319,15 @@ static void mine_sweeper_game_screen_draw_callback(Canvas* canvas, void* _model)
                 furi_string_get_cstr(model->info_str));
 
     } else {
-        const char* status_str = game_state->rt.phase == MineSweeperPhaseWon
-                ? "You Won!  Press Ok."
-                : "You Lost! Press Ok.";
+        const char* status_str = game_state->rt.phase == MineSweeperPhaseWon ? "Won! Press Ok" :
+                                                                          "Lost! Press Ok";
 
         canvas_draw_str_aligned(canvas, 0, 64-7, AlignLeft, AlignTop, status_str);
     }
-
-
-
-    // Draw time text here
+    const uint32_t elapsed_seconds = mine_sweeper_game_screen_get_elapsed_seconds(model);
+    mine_sweeper_game_screen_format_elapsed(model->info_str, elapsed_seconds);
+    canvas_draw_str_aligned(
+        canvas, 127, 64 - 7, AlignRight, AlignTop, furi_string_get_cstr(model->info_str));
 
 }
 
@@ -327,7 +382,45 @@ void mine_sweeper_game_screen_reset(MineSweeperGameScreen* instance) {
 }
 
 void mine_sweeper_game_screen_reset_clock(MineSweeperGameScreen* instance) {
-    UNUSED(instance);
+    furi_assert(instance);
+
+    with_view_model(
+        instance->view,
+        MineSweeperGameScreenModel * model,
+        {
+            model->elapsed_ms = 0;
+            model->elapsed_seconds = 0;
+            model->last_tick = furi_get_tick();
+            model->timer_running = false;
+        },
+        true);
+}
+
+void mine_sweeper_game_screen_update_clock(MineSweeperGameScreen* instance) {
+    furi_assert(instance);
+    const uint32_t now = furi_get_tick();
+    bool need_redraw = false;
+
+    with_view_model(
+        instance->view,
+        MineSweeperGameScreenModel * model,
+        {
+            if(model->timer_running) {
+                model->elapsed_ms += now - model->last_tick;
+                model->last_tick = now;
+
+                if(model->game_state && model->game_state->rt.phase != MineSweeperPhasePlaying) {
+                    model->timer_running = false;
+                }
+
+                const uint32_t elapsed_seconds = model->elapsed_ms / 1000u;
+                if(elapsed_seconds != model->elapsed_seconds) {
+                    model->elapsed_seconds = elapsed_seconds;
+                    need_redraw = true;
+                }
+            }
+        },
+        need_redraw);
 }
 
 View* mine_sweeper_game_screen_get_view(MineSweeperGameScreen* instance) {
