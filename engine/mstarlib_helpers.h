@@ -72,12 +72,6 @@ static inline int pointobj_cmp(const Point_t a, const Point_t b) {
      EQUAL(pointobj_equal_p),     \
      CMP(pointobj_cmp))
 
-// Use this to get rid of -Wunused-parameter errors for this macro only
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
-#pragma GCC diagnostic pop
-
 // Example Macro defining the DEQ for Point that will be used as a double ended queue
 DEQUE_DEF(point_deq, Point_t, POINT_OPLIST)
 
