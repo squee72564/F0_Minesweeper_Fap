@@ -63,7 +63,7 @@ static MineSweeperApp* app_alloc(void) {
     view_dispatcher_set_event_callback_context(app->view_dispatcher, app);
     view_dispatcher_set_custom_event_callback(app->view_dispatcher, minesweeper_custom_event_callback);
     view_dispatcher_set_navigation_event_callback(app->view_dispatcher, minesweeper_navigation_event_callback);
-    view_dispatcher_set_tick_event_callback(app->view_dispatcher, minesweeper_tick_event_callback, 500);
+    view_dispatcher_set_tick_event_callback(app->view_dispatcher, minesweeper_tick_event_callback, 100);
 
     // Set settings state defaults
     app->settings_committed.width_str = furi_string_alloc();
@@ -113,12 +113,21 @@ static MineSweeperApp* app_alloc(void) {
     }
     view_dispatcher_add_view(app->view_dispatcher, MineSweeperLoadingView, loading_get_view(app->loading));
 
+    app->generating_view = minesweeper_generating_view_alloc();
+    if(!app->generating_view) {
+        FURI_LOG_E(TAG, "Failed to allocate generating view");
+        goto cleanup;
+    }
+    view_dispatcher_add_view(
+        app->view_dispatcher,
+        MineSweeperGeneratingScreenView,
+        minesweeper_generating_view_get_view(app->generating_view));
+
     MineSweeperConfig initial_config = {
         .width = app->settings_committed.board_width,
         .height = app->settings_committed.board_height,
         .difficulty = app->settings_committed.difficulty,
-        // Keep cold-start generation non-blocking until Stage 3 solver safeguards land.
-        .ensure_solvable = false,
+        .ensure_solvable = app->settings_committed.ensure_solvable_board,
         .wrap_enabled = app->wrap_enabled,
     };
 
@@ -127,7 +136,6 @@ static MineSweeperApp* app_alloc(void) {
         FURI_LOG_E(TAG, "Failed to set initial game config");
         goto cleanup;
     }
-    minesweeper_engine_new_game(&app->game_state);
 
     app->game_screen = mine_sweeper_game_screen_alloc();
     if(!app->game_screen) {
@@ -199,6 +207,9 @@ static void app_free(MineSweeperApp* app) {
         if(app->loading) {
             view_dispatcher_remove_view(app->view_dispatcher, MineSweeperLoadingView);
         }
+        if(app->generating_view) {
+            view_dispatcher_remove_view(app->view_dispatcher, MineSweeperGeneratingScreenView);
+        }
         if(app->game_screen) {
             view_dispatcher_remove_view(app->view_dispatcher, MineSweeperGameScreenView);
         }
@@ -219,6 +230,9 @@ static void app_free(MineSweeperApp* app) {
     // Free views
     if(app->loading) {
         loading_free(app->loading);
+    }
+    if(app->generating_view) {
+        minesweeper_generating_view_free(app->generating_view);
     }
     if(app->start_screen) {
         start_screen_free(app->start_screen);

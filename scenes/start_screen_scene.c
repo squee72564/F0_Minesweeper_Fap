@@ -59,8 +59,8 @@ bool minesweeper_scene_start_screen_on_event(void* context, SceneManagerEvent ev
 
     if (event.type == SceneManagerEventTypeCustom) {
         if (event.event == MineSweeperSceneStartScreenContinueEvent) {
-            mine_sweeper_game_screen_reset_clock(app->game_screen);
-            scene_manager_next_scene(app->scene_manager, MineSweeperSceneGameScreen); 
+            app->generation_origin = MineSweeperGenerationOriginStart;
+            scene_manager_next_scene(app->scene_manager, MineSweeperSceneGenerating);
             consumed = true;
         }
     }

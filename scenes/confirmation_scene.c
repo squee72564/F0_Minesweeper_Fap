@@ -70,25 +70,8 @@ bool minesweeper_scene_confirmation_screen_on_event(void* context, SceneManagerE
 
                 mine_sweeper_led_reset(app);
 
-                MineSweeperConfig config = {
-                    .width = app->settings_committed.board_width,
-                    .height = app->settings_committed.board_height,
-                    .difficulty = app->settings_committed.difficulty,
-                    .ensure_solvable = app->settings_committed.ensure_solvable_board,
-                    .wrap_enabled = app->wrap_enabled,
-                };
-
-                if(minesweeper_engine_set_config(&app->game_state, &config) ==
-                   MineSweeperResultInvalid) {
-                    FURI_LOG_E(TAG, "Failed to apply committed settings to engine");
-                    break;
-                }
-
-                minesweeper_engine_new_game(&app->game_state);
-                mine_sweeper_game_screen_reset(app->game_screen);
-
-                // Go to reset game view
-                scene_manager_search_and_switch_to_another_scene(app->scene_manager, MineSweeperSceneGameScreen); 
+                app->generation_origin = MineSweeperGenerationOriginSettings;
+                scene_manager_next_scene(app->scene_manager, MineSweeperSceneGenerating);
                 break;
 
             case DialogExResultCenter :

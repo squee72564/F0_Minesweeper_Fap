@@ -2,6 +2,7 @@
 #define MINESWEEPER_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <gui/view_dispatcher.h>
 #include <gui/scene_manager.h>
@@ -14,6 +15,7 @@
 
 #include "views/start_screen.h"
 #include "views/minesweeper_game_screen2.h"
+#include "views/minesweeper_generating_view.h"
 
 // This is a helper struct for the settings view/scene
 typedef struct {
@@ -27,6 +29,12 @@ typedef struct {
     VariableItem* solvable_item;
 } MineSweeperAppSettings;
 
+typedef enum {
+    MineSweeperGenerationOriginStart = 0,
+    MineSweeperGenerationOriginGame,
+    MineSweeperGenerationOriginSettings,
+} MineSweeperGenerationOrigin;
+
 // Main MineSweeperApp
 typedef struct MineSweeperApp {
     SceneManager* scene_manager;
@@ -36,6 +44,7 @@ typedef struct MineSweeperApp {
 
     StartScreen* start_screen;
     Loading* loading;
+    MineSweeperGeneratingView* generating_view;
     MineSweeperGameScreen* game_screen;
     DialogEx* menu_screen;
     VariableItemList* settings_screen;
@@ -46,8 +55,11 @@ typedef struct MineSweeperApp {
     MineSweeperAppSettings settings_draft;
 
     MineSweeperState game_state;
+    MineSweeperGenerationJob generation_job;
 
     uint8_t is_settings_changed;
+    MineSweeperGenerationOrigin generation_origin;
+    bool generation_user_preempted;
 
     uint8_t feedback_enabled;
     uint8_t wrap_enabled;
@@ -57,6 +69,7 @@ typedef struct MineSweeperApp {
 typedef enum {
     MineSweeperStartScreenView,
     MineSweeperLoadingView,
+    MineSweeperGeneratingScreenView,
     MineSweeperGameScreenView,
     MineSweeperMenuView,
     MineSweeperSettingsView,

@@ -172,6 +172,7 @@ static bool handle_playing_inputs(MineSweeperApp* app, SceneManagerEvent event) 
 
 static bool handle_gameover_inputs(MineSweeperApp* app, SceneManagerEvent event) {
     MineSweeperAction action = {0};
+    bool is_move_input = true;
 
     switch(event.event) {
         case MineSweeperEventMoveUp:
@@ -190,9 +191,19 @@ static bool handle_gameover_inputs(MineSweeperApp* app, SceneManagerEvent event)
             action.type = MineSweeperActionMove;
             action.dx = 1;
             break;
-        default:
-            action.type = MineSweeperActionNewGame;
+        case MineSweeperEventShortOkPress:
+        case MineSweeperEventLongOkPress:
+        case MineSweeperEventBackLong:
+            is_move_input = false;
             break;
+        default:
+            return false;
+    }
+
+    if(!is_move_input) {
+        app->generation_origin = MineSweeperGenerationOriginGame;
+        scene_manager_next_scene(app->scene_manager, MineSweeperSceneGenerating);
+        return true;
     }
 
     MineSweeperActionResult result = minesweeper_engine_apply_action_ex(
@@ -243,7 +254,7 @@ void minesweeper_scene_game_screen_on_exit(void* context) {
     furi_assert(context);
     MineSweeperApp* app = context;
 
-    // Do not reset the board on scene exit; only clear scene-owned context.
+    // Keep the game-state context bound to avoid transient NULL deref during scene handoff.
+    // Detach only the input callback owned by this scene.
     mine_sweeper_game_screen_set_input_callback(app->game_screen, NULL, NULL);
-    mine_sweeper_game_screen_set_context(app->game_screen, NULL);
 }
