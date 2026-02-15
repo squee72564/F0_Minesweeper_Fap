@@ -155,6 +155,8 @@ MineSweeperResult minesweeper_engine_toggle_flag(MineSweeperState* game_state, u
 
 MineSweeperResult minesweeper_engine_move_cursor(MineSweeperState* game_state, int8_t dx, int8_t dy);
 
+MineSweeperResult minesweeper_engine_move_to_closest_tile(MineSweeperState* game_state);
+
 MineSweeperResult minesweeper_engine_reveal_all_mines(MineSweeperState* game_state);
 
 MineSweeperResult minesweeper_engine_check_win_conditions(MineSweeperState* game_state);
@@ -172,6 +174,5 @@ MineSweeperResult minesweeper_engine_set_runtime(
     const MineSweeperRuntime* runtime);
 
 MineSweeperResult minesweeper_engine_validate_state(const MineSweeperState* game_state);
-
 
 #endif

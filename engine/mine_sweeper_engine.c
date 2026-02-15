@@ -12,6 +12,7 @@ static const float difficulty_multiplier[3] = {
 };
 
 static void board_clear(MineSweeperBoard* board);
+static MineSweeperResult minesweeper_engine_reveal_all_tiles(MineSweeperState* game_state);
 
 // Bias Free Uniform Random Sample In Range [0, upper_exclusion]
 static uint16_t random_uniform_u16(uint16_t upper_exclusion) {
@@ -140,6 +141,25 @@ static bool runtime_is_valid_for_board(
     }
 
     return true;
+}
+
+static MineSweeperResult minesweeper_engine_reveal_all_tiles(MineSweeperState* game_state) {
+    furi_assert(game_state);
+
+    MineSweeperBoard* board = &game_state->board;
+    uint16_t total = (uint16_t)board->width * board->height;
+    bool changed = false;
+
+    for(uint16_t i = 0; i < total; ++i) {
+        if(!CELL_IS_REVEALED(board->cells[i])) {
+            CELL_SET_REVEALED(board->cells[i]);
+            changed = true;
+        }
+    }
+
+    // tiles_left tracks unrevealed safe tiles. If every tile is now revealed, this must be zero.
+    game_state->rt.tiles_left = 0;
+    return changed ? MineSweeperResultChanged : MineSweeperResultNoop;
 }
 
 const int8_t neighbor_offsets[8][2] = {
@@ -434,6 +454,7 @@ MineSweeperResult minesweeper_engine_check_win_conditions(MineSweeperState* game
 
     if(game_state->rt.tiles_left == 0 && game_state->rt.flags_left == game_state->rt.mines_left) {
         game_state->rt.phase = MineSweeperPhaseWon;
+        minesweeper_engine_reveal_all_tiles(game_state);
         return MineSweeperResultWin;
     }
 
@@ -523,22 +544,115 @@ MineSweeperResult minesweeper_engine_move_cursor(
     return MineSweeperResultChanged;
 }
 
-MineSweeperResult minesweeper_engine_reveal_all_mines(MineSweeperState* game_state) {
+MineSweeperResult minesweeper_engine_move_to_closest_tile(MineSweeperState* game_state) {
     furi_assert(game_state);
 
     MineSweeperBoard* board = &game_state->board;
-    uint16_t total = (uint16_t)board->width * board->height;
-    bool changed = false;
+    if(board->width == 0 || board->height == 0) {
+        return MineSweeperResultInvalid;
+    }
 
-    for(uint16_t i = 0; i < total; ++i) {
-        if(CELL_IS_MINE(board->cells[i]) && !CELL_IS_REVEALED(board->cells[i])) {
-            CELL_SET_REVEALED(board->cells[i]);
-            changed = true;
+    uint16_t curr_pos_1d = 
+        board_index(&game_state->board, game_state->rt.cursor_col, game_state->rt.cursor_row); 
+
+    if (!CELL_IS_REVEALED(game_state->board.cells[curr_pos_1d])) {
+        return MineSweeperResultNoop;
+    }
+
+    Point result = (Point) {.x = 0, .y = 0};
+
+    point_deq_t deq2;
+    point_deq_init(deq2);
+
+    // Init both the set and dequeue
+    point_deq_t deq;
+    point_set_t set;
+
+    point_deq_init(deq);
+    point_set_init(set);
+
+    // Point_t pos will be used to keep track of the current point
+    Point_t pos;
+    pointobj_init(pos);
+
+    // Starting position is current position of the model
+    Point start_pos = (Point){.x = game_state->rt.cursor_col, .y = game_state->rt.cursor_row};
+    pointobj_set_point(pos, start_pos);
+
+    point_deq_push_back(deq, pos);
+
+    bool is_uncleared_tile_found = false;
+
+    while (point_deq_size(deq) > 0) {
+        point_deq_pop_front(&pos, deq);
+        Point curr_pos = pointobj_get_point(pos);
+        uint16_t curr_pos_1d = board_index(&game_state->board, curr_pos.x, curr_pos.y);
+
+        if (point_set_cget(set, pos) != NULL) {
+            continue;
+        }
+
+        point_set_push(set, pos);
+
+        // Do not continue if we have found some valid tiles and this is cleared
+        if (is_uncleared_tile_found &&
+            CELL_IS_REVEALED(game_state->board.cells[curr_pos_1d])) {
+            continue;
+        }
+
+        if (!CELL_IS_REVEALED(game_state->board.cells[curr_pos_1d])) {
+            is_uncleared_tile_found = true;
+            pointobj_set_point(pos, curr_pos);
+            point_deq_push_back(deq2, pos);
+            continue;
+        }
+
+        for (uint8_t n = 0; n < 8; ++n) {
+            int16_t dx = curr_pos.x + neighbor_offsets[n][0];
+            int16_t dy = curr_pos.y + neighbor_offsets[n][1];
+
+            if (!board_in_bounds(&game_state->board, dx, dy)) continue;
+                
+            Point neighbor = (Point) {.x = dx, .y = dy};
+            pointobj_set_point(pos, neighbor);
+            point_deq_push_back(deq, pos);
         }
     }
 
+    point_set_clear(set);
+    point_deq_clear(deq);
+
+    double min_distance = INT_MAX;
+
+    while (point_deq_size(deq2) > 0) {
+        point_deq_pop_front(&pos, deq2);
+        Point curr_pos = pointobj_get_point(pos);
+        int x_abs = abs(curr_pos.x - start_pos.x); 
+        int y_abs = abs(curr_pos.y - start_pos.y); 
+        double distance = sqrt(x_abs*x_abs + y_abs*y_abs);
+
+        if (distance < min_distance) {
+            result = curr_pos;
+            min_distance = distance;
+        } else if (distance == min_distance && (furi_hal_random_get() % 2) == 0) {
+            result = curr_pos;
+            min_distance = distance;
+        }
+    }
+
+    point_deq_clear(deq2);
+
+    game_state->rt.cursor_col = result.x;
+    game_state->rt.cursor_row = result.y;
+
+    return MineSweeperResultChanged;
+}
+
+MineSweeperResult minesweeper_engine_reveal_all_mines(MineSweeperState* game_state) {
+    furi_assert(game_state);
+
     game_state->rt.phase = MineSweeperPhaseLost;
-    return changed ? MineSweeperResultChanged : MineSweeperResultNoop;
+    return minesweeper_engine_reveal_all_tiles(game_state);
 }
 
 MineSweeperResult minesweeper_engine_apply_action(
@@ -603,10 +717,14 @@ MineSweeperActionResult minesweeper_engine_apply_action_ex(
     };
 
     if(action.type != MineSweeperActionNewGame &&
+       action.type != MineSweeperActionMove &&
        game_state->rt.phase != MineSweeperPhasePlaying) {
         detailed.result = MineSweeperResultNoop;
         return detailed;
     }
+
+    uint16_t curr_pos_1d = board_index(&game_state->board, game_state->rt.cursor_col, game_state->rt.cursor_row);
+    MineSweeperCell curr_cell = game_state->board.cells[curr_pos_1d];
 
     switch(action.type) {
     case MineSweeperActionMove: {
@@ -626,10 +744,14 @@ MineSweeperActionResult minesweeper_engine_apply_action_ex(
         return detailed;
 
     case MineSweeperActionFlag:
-        detailed.result = minesweeper_engine_toggle_flag(
-            game_state,
-            game_state->rt.cursor_col,
-            game_state->rt.cursor_row);
+        // Flag action toggles flag on unrevealed tiles and
+        // moves to closest tiles on revealed
+        detailed.result = CELL_IS_REVEALED(curr_cell)
+            ? minesweeper_engine_move_to_closest_tile(game_state)
+            : minesweeper_engine_toggle_flag(
+                game_state,
+                game_state->rt.cursor_col,
+                game_state->rt.cursor_row);
         return detailed;
 
     case MineSweeperActionChord:
