@@ -9,7 +9,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-		
+
 /** We can use this Point struct for the 2d position for the minesweeper game.
   * We define the necessary functions needed for this user defined type
   * so that we can make use of M*LIB's Red Black Tree and Double Ended
@@ -17,7 +17,7 @@ extern "C" {
   */
 
 typedef struct {
-    uint8_t x,y;
+    uint8_t x, y;
 } Point;
 
 typedef Point Point_t[1];
@@ -63,15 +63,14 @@ static inline int pointobj_cmp(const Point_t a, const Point_t b) {
 
 // This is the oplist needed to define the rb tree and dequeue and uses the/
 // above functions.
-#define POINT_OPLIST (                      \
-            TYPE(Point_t),                  \
-            INIT(pointobj_init),            \
-            INIT_SET(pointobj_init_set),    \
-            SET(pointobj_set),              \
-            CLEAR(pointobj_clear),          \
-            EQUAL(pointobj_equal_p),        \
-            CMP(pointobj_cmp)               \
-        )
+#define POINT_OPLIST              \
+    (TYPE(Point_t),               \
+     INIT(pointobj_init),         \
+     INIT_SET(pointobj_init_set), \
+     SET(pointobj_set),           \
+     CLEAR(pointobj_clear),       \
+     EQUAL(pointobj_equal_p),     \
+     CMP(pointobj_cmp))
 
 // Use this to get rid of -Wunused-parameter errors for this macro only
 #pragma GCC diagnostic push
@@ -83,7 +82,7 @@ RBTREE_DEF(point_set, Point_t, POINT_OPLIST)
 #pragma GCC diagnostic pop
 
 // Example Macro defining the DEQ for Point that will be used as a double ended queue
-DEQUE_DEF (point_deq, Point_t, POINT_OPLIST)
+DEQUE_DEF(point_deq, Point_t, POINT_OPLIST)
 
 // Helper to convert the Point_t type to Point
 static inline Point pointobj_get_point(const Point_t z) {

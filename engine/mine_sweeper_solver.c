@@ -2,9 +2,7 @@
 #include "mine_sweeper_engine.h"
 #include <furi.h>
 
-bool check_board_with_solver(
-    MineSweeperBoard* board
-) {
+bool check_board_with_solver(MineSweeperBoard* board) {
     furi_assert(board);
 
     point_deq_t deq;
@@ -33,20 +31,19 @@ bool check_board_with_solver(
             point_deq_pop_front(&pos, deq);
             const Point curr_pos = pointobj_get_point(pos);
             uint16_t curr_pos_1d = board_index(board, curr_pos.x, curr_pos.y);
-            
-            const MineSweeperCell cell  = board->cells[curr_pos_1d];
+
+            const MineSweeperCell cell = board->cells[curr_pos_1d];
             uint8_t tile_number = CELL_GET_NEIGHBORS(cell);
-            uint8_t hidden_neighbors  = 0;
+            uint8_t hidden_neighbors = 0;
             uint8_t flagged_neighbors = 0;
 
-            if (!tile_number)
-                continue;
+            if (!tile_number) continue;
 
             for (uint8_t n = 0; n < 8; ++n) {
-                const int16_t dx = curr_pos.x + neighbor_offsets[n][0]; 
+                const int16_t dx = curr_pos.x + neighbor_offsets[n][0];
                 const int16_t dy = curr_pos.y + neighbor_offsets[n][1];
 
-                if (!board_in_bounds(board, dx,  dy)) {
+                if (!board_in_bounds(board, dx, dy)) {
                     continue;
                 }
 
@@ -56,7 +53,7 @@ bool check_board_with_solver(
                 if (CELL_IS_FLAGGED(neighbor_cell)) {
                     flagged_neighbors++;
                 } else if (!CELL_IS_REVEALED(neighbor_cell)) {
-                    hidden_neighbors++; 
+                    hidden_neighbors++;
                 }
             }
 
@@ -68,26 +65,17 @@ bool check_board_with_solver(
             const uint8_t remaining_mines = tile_number - flagged_neighbors;
 
             if (remaining_mines == 0) {
-
                 for (uint8_t n = 0; n < 8; ++n) {
-                    const int16_t dx = curr_pos.x + neighbor_offsets[n][0]; 
+                    const int16_t dx = curr_pos.x + neighbor_offsets[n][0];
                     const int16_t dy = curr_pos.y + neighbor_offsets[n][1];
 
-                    if (!board_in_bounds(board, dx,  dy))
-                        continue;
+                    if (!board_in_bounds(board, dx, dy)) continue;
 
                     const int16_t neighbor_pos_1d = board_index(board, dx, dy);
                     const MineSweeperCell neighbor_cell = board->cells[neighbor_pos_1d];
 
-                    if (!CELL_IS_REVEALED(neighbor_cell) &&
-                        !CELL_IS_FLAGGED(neighbor_cell)) {
-                        bfs_tile_clear_solver(
-                            board,
-                            dx,
-                            dy,
-                            &deq,
-                            &visited
-                        );
+                    if (!CELL_IS_REVEALED(neighbor_cell) && !CELL_IS_FLAGGED(neighbor_cell)) {
+                        bfs_tile_clear_solver(board, dx, dy, &deq, &visited);
                     }
                 }
 
@@ -95,17 +83,15 @@ bool check_board_with_solver(
 
             } else if (hidden_neighbors == remaining_mines) {
                 for (uint8_t n = 0; n < 8; ++n) {
-                    const int16_t dx = curr_pos.x + neighbor_offsets[n][0]; 
+                    const int16_t dx = curr_pos.x + neighbor_offsets[n][0];
                     const int16_t dy = curr_pos.y + neighbor_offsets[n][1];
 
-                    if (!board_in_bounds(board, dx,  dy))
-                        continue;
+                    if (!board_in_bounds(board, dx, dy)) continue;
 
                     const int16_t neighbor_pos_1d = board_index(board, dx, dy);
                     const MineSweeperCell neighbor_cell = board->cells[neighbor_pos_1d];
 
-                    if (!CELL_IS_REVEALED(neighbor_cell) &&
-                        !CELL_IS_FLAGGED(neighbor_cell)) {
+                    if (!CELL_IS_REVEALED(neighbor_cell) && !CELL_IS_FLAGGED(neighbor_cell)) {
                         if (!CELL_IS_MINE(neighbor_cell) || total_mines == 0) {
                             has_invalid_flag_deduction = true;
                             break;
@@ -141,8 +127,7 @@ void bfs_tile_clear_solver(
     uint16_t x,
     uint16_t y,
     point_deq_t* edges,
-    point_set_t* visited
-) { 
+    point_set_t* visited) {
     furi_assert(board);
     furi_assert(edges);
     furi_assert(visited);
@@ -163,8 +148,7 @@ void bfs_tile_clear_solver(
         uint16_t curr_pos_1d = board_index(board, curr_pos.x, curr_pos.y);
         MineSweeperCell curr_cell = board->cells[curr_pos_1d];
 
-        if (point_set_cget(*visited, pos) != NULL ||
-            CELL_IS_REVEALED(curr_cell) ||
+        if (point_set_cget(*visited, pos) != NULL || CELL_IS_REVEALED(curr_cell) ||
             CELL_IS_FLAGGED(curr_cell)) {
             continue;
         }
@@ -185,11 +169,10 @@ void bfs_tile_clear_solver(
         }
 
         for (uint8_t n = 0; n < 8; ++n) {
-            const int16_t dx = curr_pos.x + neighbor_offsets[n][0]; 
+            const int16_t dx = curr_pos.x + neighbor_offsets[n][0];
             const int16_t dy = curr_pos.y + neighbor_offsets[n][1];
 
-            if (!board_in_bounds(board, dx,  dy))
-                continue;
+            if (!board_in_bounds(board, dx, dy)) continue;
 
             pointobj_set_point(pos, (Point){.x = dx, .y = dy});
 

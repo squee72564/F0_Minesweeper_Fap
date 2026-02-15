@@ -4,13 +4,12 @@
 
 #include <furi.h>
 
-static void minesweeper_scene_generating_input_callback(
-    MineSweeperGeneratingEvent event,
-    void* context) {
+static void
+    minesweeper_scene_generating_input_callback(MineSweeperGeneratingEvent event, void* context) {
     furi_assert(context);
     MineSweeperApp* app = context;
 
-    if(event == MineSweeperGeneratingEventStartNow) {
+    if (event == MineSweeperGeneratingEventStartNow) {
         app->generation_user_preempted = true;
     }
 }
@@ -33,14 +32,12 @@ static void minesweeper_scene_generating_update_stats(MineSweeperApp* app) {
     furi_assert(app);
 
     uint32_t elapsed_seconds = 0;
-    if(app->generation_job.start_tick != 0) {
+    if (app->generation_job.start_tick != 0) {
         elapsed_seconds = (furi_get_tick() - app->generation_job.start_tick) / 1000u;
     }
 
     minesweeper_generating_view_set_stats(
-        app->generating_view,
-        app->generation_job.attempts_total,
-        elapsed_seconds);
+        app->generating_view, app->generation_job.attempts_total, elapsed_seconds);
 }
 
 static void minesweeper_scene_generating_try_switch_to_game(
@@ -48,10 +45,9 @@ static void minesweeper_scene_generating_try_switch_to_game(
     bool allow_unsolved_fallback) {
     furi_assert(app);
 
-    if(minesweeper_engine_generation_finish(
-           &app->generation_job,
-           &app->game_state,
-           allow_unsolved_fallback) != MineSweeperResultChanged) {
+    if (minesweeper_engine_generation_finish(
+            &app->generation_job, &app->game_state, allow_unsolved_fallback) !=
+        MineSweeperResultChanged) {
         return;
     }
 
@@ -64,7 +60,7 @@ static void minesweeper_scene_generating_cancel_and_return(MineSweeperApp* app) 
 
     minesweeper_engine_generation_cancel(&app->generation_job);
 
-    switch(app->generation_origin) {
+    switch (app->generation_origin) {
     case MineSweeperGenerationOriginStart:
         scene_manager_next_scene(app->scene_manager, MineSweeperSceneStartScreen);
         break;
@@ -83,8 +79,8 @@ void minesweeper_scene_generating_on_enter(void* context) {
     MineSweeperApp* app = context;
 
     MineSweeperConfig config = minesweeper_scene_generating_build_config(app);
-    if(minesweeper_engine_generation_begin(&app->generation_job, &config) ==
-       MineSweeperResultInvalid) {
+    if (minesweeper_engine_generation_begin(&app->generation_job, &config) ==
+        MineSweeperResultInvalid) {
         FURI_LOG_E(TAG, "Failed to begin generation job");
         minesweeper_scene_generating_cancel_and_return(app);
         return;
@@ -94,8 +90,7 @@ void minesweeper_scene_generating_on_enter(void* context) {
 
     minesweeper_generating_view_set_context(app->generating_view, app);
     minesweeper_generating_view_set_input_callback(
-        app->generating_view,
-        minesweeper_scene_generating_input_callback);
+        app->generating_view, minesweeper_scene_generating_input_callback);
     minesweeper_scene_generating_update_stats(app);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, MineSweeperGeneratingScreenView);
@@ -105,17 +100,17 @@ bool minesweeper_scene_generating_on_event(void* context, SceneManagerEvent even
     furi_assert(context);
     MineSweeperApp* app = context;
 
-    if(event.type == SceneManagerEventTypeBack) {
+    if (event.type == SceneManagerEventTypeBack) {
         // Generating flow should never navigate away via Back.
         return true;
     }
 
-    if(event.type == SceneManagerEventTypeTick) {
-        if(app->generation_user_preempted) {
-            if(!app->generation_job.has_latest_candidate) {
+    if (event.type == SceneManagerEventTypeTick) {
+        if (app->generation_user_preempted) {
+            if (!app->generation_job.has_latest_candidate) {
                 minesweeper_engine_generation_step(&app->generation_job, 1);
                 minesweeper_scene_generating_update_stats(app);
-                if(!app->generation_job.has_latest_candidate) {
+                if (!app->generation_job.has_latest_candidate) {
                     return true;
                 }
             }
@@ -128,7 +123,7 @@ bool minesweeper_scene_generating_on_event(void* context, SceneManagerEvent even
             minesweeper_engine_generation_step(&app->generation_job, 16);
         minesweeper_scene_generating_update_stats(app);
 
-        if(status == MineSweeperGenerationStatusReady) {
+        if (status == MineSweeperGenerationStatusReady) {
             minesweeper_scene_generating_try_switch_to_game(app, false);
         }
         return true;

@@ -11,12 +11,12 @@
 #include "engine/mine_sweeper_engine.h"
 
 // These defines represent how many tiles
-// can be visually representen on the screen 
+// can be visually representen on the screen
 // due to icon sizes
 #define MINESWEEPER_SCREEN_TILE_HEIGHT 7
-#define MINESWEEPER_SCREEN_TILE_WIDTH 16
+#define MINESWEEPER_SCREEN_TILE_WIDTH  16
 
-#define MS_DEBUG_TAG  "Mine Sweeper Module/View"
+#define MS_DEBUG_TAG "Mine Sweeper Module/View"
 
 typedef enum {
     MineSweeperEventMoveUp,
@@ -78,14 +78,16 @@ void mine_sweeper_game_screen_set_input_callback(
  * @param       instance    MineSweeperGameScreen* instance
  * @param       context     void* context for MineSweeperGameScreen instance 
  */
-void mine_sweeper_game_screen_set_context(MineSweeperGameScreen* instance, MineSweeperState* context);
+void mine_sweeper_game_screen_set_context(
+    MineSweeperGameScreen* instance,
+    MineSweeperState* context);
 
-#define inverted_canvas_white_to_black(canvas, code)      \
-    {                                           \
-        canvas_set_color(canvas, ColorWhite);   \
-        {code};                                 \
-        canvas_set_color(canvas, ColorBlack);   \
-    }                           
+#define inverted_canvas_white_to_black(canvas, code) \
+    {                                                \
+        canvas_set_color(canvas, ColorWhite);        \
+        {code};                                      \
+        canvas_set_color(canvas, ColorBlack);        \
+    }
 
 #ifdef __cplusplus
 }

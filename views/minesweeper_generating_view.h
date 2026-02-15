@@ -12,9 +12,7 @@ typedef enum {
     MineSweeperGeneratingEventStartNow = 0,
 } MineSweeperGeneratingEvent;
 
-typedef void (*MineSweeperGeneratingInputCallback)(
-    MineSweeperGeneratingEvent event,
-    void* context);
+typedef void (*MineSweeperGeneratingInputCallback)(MineSweeperGeneratingEvent event, void* context);
 
 MineSweeperGeneratingView* minesweeper_generating_view_alloc(void);
 void minesweeper_generating_view_free(MineSweeperGeneratingView* instance);

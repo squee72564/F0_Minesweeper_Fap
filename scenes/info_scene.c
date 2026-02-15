@@ -2,49 +2,48 @@
 #include "helpers/mine_sweeper_config.h"
 #include "scenes/minesweeper_scene.h"
 
-static const char* info_string= "--   GAME INFO BELOW   --\n\n"
-                                "1. Press OK to clear a tile.\n\n"
-                                "2. Hold OK on a numbered tile\n"
-                                "to clear all surrounding\n"
-                                "tiles if the correct amount\n"
-                                "of flags are set.\n\n"
-                                "3. Hold Back on a tile to\n"
-                                "mark it with a flag.\n\n"
-                                "4. Hold back on a cleared\n"
-                                "tile to jump to the closest\n"
-                                "uncleared tile.\n\n"
-                                "---    SETTINGS INFO    ---\n\n"
-                                "Difficulty and map\n"
-                                "dimensions can be changed\n"
-                                "in the settings with a\n"
-                                "max map size of 1024\n"
-                                "tiles (32x32).\n"
-                                "You will be prompted to\n"
-                                "confirm any changes to\n"
-                                "these settings as it will\n"
-                                "reset the board.\n\n"
-                                "----      FEEDBACK     ----\n"
-                                "Enables or disables the\n"
-                                "haptic and Sound feedback\n"
-                                "for the game.\n\n"
-                                " -  ENSURE SOLVABLE  -\n"
-                                "This is a setting that\n"
-                                "enables a board verifier\n"
-                                "when generating a new\n"
-                                "board.\n\n"
-                                "-----       WRAP       -----\n"
-                                "Enables wrapping player\n"
-                                "position to the other side\n"
-                                "of the screen if you move out\n"
-                                "of bounds.\n\n"
-                                "Enjoy the game and if you\n"
-                                "want to reach out about an\n"
-                                "issue go to the git hub repo\n"
-                                "for this app:\n\n"
-                                "'github.com/squee72564/\n"
-                                "F0_Minesweeper_Fap'\n\n"
-                                "Thanks and enjoy!";
-
+static const char* info_string = "--   GAME INFO BELOW   --\n\n"
+                                 "1. Press OK to clear a tile.\n\n"
+                                 "2. Hold OK on a numbered tile\n"
+                                 "to clear all surrounding\n"
+                                 "tiles if the correct amount\n"
+                                 "of flags are set.\n\n"
+                                 "3. Hold Back on a tile to\n"
+                                 "mark it with a flag.\n\n"
+                                 "4. Hold back on a cleared\n"
+                                 "tile to jump to the closest\n"
+                                 "uncleared tile.\n\n"
+                                 "---    SETTINGS INFO    ---\n\n"
+                                 "Difficulty and map\n"
+                                 "dimensions can be changed\n"
+                                 "in the settings with a\n"
+                                 "max map size of 1024\n"
+                                 "tiles (32x32).\n"
+                                 "You will be prompted to\n"
+                                 "confirm any changes to\n"
+                                 "these settings as it will\n"
+                                 "reset the board.\n\n"
+                                 "----      FEEDBACK     ----\n"
+                                 "Enables or disables the\n"
+                                 "haptic and Sound feedback\n"
+                                 "for the game.\n\n"
+                                 " -  ENSURE SOLVABLE  -\n"
+                                 "This is a setting that\n"
+                                 "enables a board verifier\n"
+                                 "when generating a new\n"
+                                 "board.\n\n"
+                                 "-----       WRAP       -----\n"
+                                 "Enables wrapping player\n"
+                                 "position to the other side\n"
+                                 "of the screen if you move out\n"
+                                 "of bounds.\n\n"
+                                 "Enjoy the game and if you\n"
+                                 "want to reach out about an\n"
+                                 "issue go to the git hub repo\n"
+                                 "for this app:\n\n"
+                                 "'github.com/squee72564/\n"
+                                 "F0_Minesweeper_Fap'\n\n"
+                                 "Thanks and enjoy!";
 
 void minesweeper_scene_info_screen_on_enter(void* context) {
     furi_assert(context);
@@ -64,9 +63,9 @@ bool minesweeper_scene_info_screen_on_event(void* context, SceneManagerEvent eve
     MineSweeperApp* app = context;
     bool consumed = false;
 
-    if(event.type == SceneManagerEventTypeBack) {
-        if(!scene_manager_search_and_switch_to_previous_scene(
-               app->scene_manager, MineSweeperSceneSettingsScreen)) {
+    if (event.type == SceneManagerEventTypeBack) {
+        if (!scene_manager_search_and_switch_to_previous_scene(
+                app->scene_manager, MineSweeperSceneSettingsScreen)) {
             FURI_LOG_W(TAG, "Info back target not found, stopping app");
             scene_manager_stop(app->scene_manager);
             view_dispatcher_stop(app->view_dispatcher);

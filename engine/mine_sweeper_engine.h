@@ -48,40 +48,39 @@ typedef struct {
 typedef uint8_t MineSweeperCell;
 
 /* Bit masks */
-#define CELL_MINE_MASK        (0x01u)
-#define CELL_REVEALED_MASK    (0x02u)
-#define CELL_FLAG_MASK        (0x04u)
+#define CELL_MINE_MASK     (0x01u)
+#define CELL_REVEALED_MASK (0x02u)
+#define CELL_FLAG_MASK     (0x04u)
 
-#define CELL_NEIGHBOR_SHIFT   (3u)
-#define CELL_NEIGHBOR_MASK    (0x0Fu << CELL_NEIGHBOR_SHIFT)
+#define CELL_NEIGHBOR_SHIFT (3u)
+#define CELL_NEIGHBOR_MASK  (0x0Fu << CELL_NEIGHBOR_SHIFT)
 
 /* Board limits */
-#define BOARD_MAX_WIDTH       (32u)
-#define BOARD_MAX_HEIGHT      (32u)
-#define BOARD_MAX_TILES       (BOARD_MAX_WIDTH * BOARD_MAX_HEIGHT)
+#define BOARD_MAX_WIDTH  (32u)
+#define BOARD_MAX_HEIGHT (32u)
+#define BOARD_MAX_TILES  (BOARD_MAX_WIDTH * BOARD_MAX_HEIGHT)
 
 /* ---- Queries ---- */
 #define CELL_IS_MINE(c)       (((c) & CELL_MINE_MASK) != 0u)
 #define CELL_IS_REVEALED(c)   (((c) & CELL_REVEALED_MASK) != 0u)
 #define CELL_IS_FLAGGED(c)    (((c) & CELL_FLAG_MASK) != 0u)
-#define CELL_GET_NEIGHBORS(c) \
-    ((uint8_t)(((c) & CELL_NEIGHBOR_MASK) >> CELL_NEIGHBOR_SHIFT))
+#define CELL_GET_NEIGHBORS(c) ((uint8_t)(((c) & CELL_NEIGHBOR_MASK) >> CELL_NEIGHBOR_SHIFT))
 
 /* ---- Mutators ---- */
-#define CELL_SET_MINE(c)         ((c) |= CELL_MINE_MASK)
-#define CELL_CLEAR_MINE(c)       ((c) &= (uint8_t)~CELL_MINE_MASK)
+#define CELL_SET_MINE(c)   ((c) |= CELL_MINE_MASK)
+#define CELL_CLEAR_MINE(c) ((c) &= (uint8_t)~CELL_MINE_MASK)
 
-#define CELL_SET_REVEALED(c)     ((c) |= CELL_REVEALED_MASK)
-#define CELL_CLEAR_REVEALED(c)   ((c) &= (uint8_t)~CELL_REVEALED_MASK)
+#define CELL_SET_REVEALED(c)   ((c) |= CELL_REVEALED_MASK)
+#define CELL_CLEAR_REVEALED(c) ((c) &= (uint8_t)~CELL_REVEALED_MASK)
 
-#define CELL_SET_FLAGGED(c)      ((c) |= CELL_FLAG_MASK)
-#define CELL_CLEAR_FLAGGED(c)    ((c) &= (uint8_t)~CELL_FLAG_MASK)
+#define CELL_SET_FLAGGED(c)   ((c) |= CELL_FLAG_MASK)
+#define CELL_CLEAR_FLAGGED(c) ((c) &= (uint8_t)~CELL_FLAG_MASK)
 
-#define CELL_SET_NEIGHBORS(c,n) \
-    do { \
-        (c) &= (uint8_t)~CELL_NEIGHBOR_MASK; \
+#define CELL_SET_NEIGHBORS(c, n)                                \
+    do {                                                        \
+        (c) &= (uint8_t)~CELL_NEIGHBOR_MASK;                    \
         (c) |= (uint8_t)(((n & 0x0Fu) << CELL_NEIGHBOR_SHIFT)); \
-    } while(0)
+    } while (0)
 
 /* ---- Board ---- */
 typedef struct {
@@ -160,19 +159,17 @@ uint16_t board_reveal_flood(MineSweeperBoard* board, uint8_t x, uint8_t y);
 
 void board_toggle_flag(MineSweeperBoard* board, uint8_t x, uint8_t y);
 
-
 /* ---- ENGINE API ---- */
 
 MineSweeperResult minesweeper_engine_generation_begin(
     MineSweeperGenerationJob* job,
     const MineSweeperConfig* config);
 
-MineSweeperGenerationStatus minesweeper_engine_generation_step(
-    MineSweeperGenerationJob* job,
-    uint16_t attempt_budget);
+MineSweeperGenerationStatus
+    minesweeper_engine_generation_step(MineSweeperGenerationJob* job, uint16_t attempt_budget);
 
-MineSweeperGenerationStatus minesweeper_engine_generation_status(
-    const MineSweeperGenerationJob* job);
+MineSweeperGenerationStatus
+    minesweeper_engine_generation_status(const MineSweeperGenerationJob* job);
 
 MineSweeperResult minesweeper_engine_generation_finish(
     MineSweeperGenerationJob* job,
@@ -187,9 +184,11 @@ MineSweeperResult minesweeper_engine_reveal(MineSweeperState* game_state, uint16
 
 MineSweeperResult minesweeper_engine_chord(MineSweeperState* game_state, uint16_t x, uint16_t y);
 
-MineSweeperResult minesweeper_engine_toggle_flag(MineSweeperState* game_state, uint16_t x, uint16_t y);
+MineSweeperResult
+    minesweeper_engine_toggle_flag(MineSweeperState* game_state, uint16_t x, uint16_t y);
 
-MineSweeperResult minesweeper_engine_move_cursor(MineSweeperState* game_state, int8_t dx, int8_t dy);
+MineSweeperResult
+    minesweeper_engine_move_cursor(MineSweeperState* game_state, int8_t dx, int8_t dy);
 
 MineSweeperResult minesweeper_engine_move_to_closest_tile(MineSweeperState* game_state);
 
@@ -197,15 +196,14 @@ MineSweeperResult minesweeper_engine_reveal_all_mines(MineSweeperState* game_sta
 
 MineSweeperResult minesweeper_engine_check_win_conditions(MineSweeperState* game_state);
 
-MineSweeperActionResult minesweeper_engine_apply_action(MineSweeperState* game_state, MineSweeperAction action);
+MineSweeperActionResult
+    minesweeper_engine_apply_action(MineSweeperState* game_state, MineSweeperAction action);
 
-MineSweeperResult minesweeper_engine_set_config(
-    MineSweeperState* game_state,
-    const MineSweeperConfig* config);
+MineSweeperResult
+    minesweeper_engine_set_config(MineSweeperState* game_state, const MineSweeperConfig* config);
 
-MineSweeperResult minesweeper_engine_set_runtime(
-    MineSweeperState* game_state,
-    const MineSweeperRuntime* runtime);
+MineSweeperResult
+    minesweeper_engine_set_runtime(MineSweeperState* game_state, const MineSweeperRuntime* runtime);
 
 MineSweeperResult minesweeper_engine_validate_state(const MineSweeperState* game_state);
 

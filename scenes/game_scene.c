@@ -42,28 +42,26 @@ static void mine_sweeper_flag_effect(MineSweeperApp* app) {
 
 static void mine_sweeper_move_effect(MineSweeperApp* app) {
     furi_assert(app);
-    
+
     mine_sweeper_play_haptic_short(app);
 }
 
 static void mine_sweeper_wrap_effect(MineSweeperApp* app) {
     furi_assert(app);
-    
+
     mine_sweeper_led_blink_yellow(app);
     mine_sweeper_play_wrap_sound(app);
     mine_sweeper_play_haptic_short(app);
     mine_sweeper_stop_all_sound(app);
-
 }
 
 static void mine_sweeper_oob_effect(MineSweeperApp* app) {
     furi_assert(app);
-    
+
     mine_sweeper_led_blink_red(app);
     mine_sweeper_play_oob_sound(app);
     mine_sweeper_play_haptic_short(app);
     mine_sweeper_stop_all_sound(app);
-
 }
 
 static void mine_sweeper_lose_effect(MineSweeperApp* app) {
@@ -73,7 +71,6 @@ static void mine_sweeper_lose_effect(MineSweeperApp* app) {
     mine_sweeper_play_lose_sound(app);
     mine_sweeper_play_haptic_lose(app);
     mine_sweeper_stop_all_sound(app);
-
 }
 
 static void mine_sweeper_win_effect(MineSweeperApp* app) {
@@ -83,12 +80,13 @@ static void mine_sweeper_win_effect(MineSweeperApp* app) {
     mine_sweeper_play_win_sound(app);
     mine_sweeper_play_haptic_win(app);
     mine_sweeper_stop_all_sound(app);
-
 }
 
 static void process_feedback(
-    MineSweeperApp* app, MineSweeperActionType action_type, MineSweeperActionResult result) {
-    if(result.result == MineSweeperResultNoop && action_type != MineSweeperActionMove) {
+    MineSweeperApp* app,
+    MineSweeperActionType action_type,
+    MineSweeperActionResult result) {
+    if (result.result == MineSweeperResultNoop && action_type != MineSweeperActionMove) {
         return;
     }
 
@@ -100,66 +98,64 @@ static void process_feedback(
         return;
     }
 
-    switch(action_type) {
-        case MineSweeperActionMove:
-            if (result.move_outcome == MineSweeperMoveOutcomeBlocked) {
-                mine_sweeper_oob_effect(app);
-            } else  if (result.move_outcome == MineSweeperMoveOutcomeWrapped) {
-                mine_sweeper_wrap_effect(app);
-            } else {
-                mine_sweeper_move_effect(app);
-            }
-            break;
-        case MineSweeperActionReveal:
-            mine_sweeper_short_ok_effect(app);
-            break;
-        case MineSweeperActionFlag:
-            mine_sweeper_flag_effect(app);
-            break;
-        case MineSweeperActionChord:
-            mine_sweeper_long_ok_effect(app);
-            break;
-        default:
-            break;
+    switch (action_type) {
+    case MineSweeperActionMove:
+        if (result.move_outcome == MineSweeperMoveOutcomeBlocked) {
+            mine_sweeper_oob_effect(app);
+        } else if (result.move_outcome == MineSweeperMoveOutcomeWrapped) {
+            mine_sweeper_wrap_effect(app);
+        } else {
+            mine_sweeper_move_effect(app);
+        }
+        break;
+    case MineSweeperActionReveal:
+        mine_sweeper_short_ok_effect(app);
+        break;
+    case MineSweeperActionFlag:
+        mine_sweeper_flag_effect(app);
+        break;
+    case MineSweeperActionChord:
+        mine_sweeper_long_ok_effect(app);
+        break;
+    default:
+        break;
     }
 }
 
 static bool handle_playing_inputs(MineSweeperApp* app, SceneManagerEvent event) {
     MineSweeperAction action = {0};
 
-    switch(event.event) {
-        case MineSweeperEventMoveUp:
-            action.type = MineSweeperActionMove;
-            action.dy = -1;
-            break;
-        case MineSweeperEventMoveDown:
-            action.type = MineSweeperActionMove;
-            action.dy = 1;
-            break;
-        case MineSweeperEventMoveLeft:
-            action.type = MineSweeperActionMove;
-            action.dx = -1;
-            break;
-        case MineSweeperEventMoveRight:
-            action.type = MineSweeperActionMove;
-            action.dx = 1;
-            break;
-        case MineSweeperEventShortOkPress:
-            action.type = MineSweeperActionReveal;
-            break;
-        case MineSweeperEventLongOkPress:
-            action.type = MineSweeperActionChord;
-            break;
-        case MineSweeperEventBackLong:
-            action.type = MineSweeperActionFlag;
-            break;
-        default:
-            return false;
+    switch (event.event) {
+    case MineSweeperEventMoveUp:
+        action.type = MineSweeperActionMove;
+        action.dy = -1;
+        break;
+    case MineSweeperEventMoveDown:
+        action.type = MineSweeperActionMove;
+        action.dy = 1;
+        break;
+    case MineSweeperEventMoveLeft:
+        action.type = MineSweeperActionMove;
+        action.dx = -1;
+        break;
+    case MineSweeperEventMoveRight:
+        action.type = MineSweeperActionMove;
+        action.dx = 1;
+        break;
+    case MineSweeperEventShortOkPress:
+        action.type = MineSweeperActionReveal;
+        break;
+    case MineSweeperEventLongOkPress:
+        action.type = MineSweeperActionChord;
+        break;
+    case MineSweeperEventBackLong:
+        action.type = MineSweeperActionFlag;
+        break;
+    default:
+        return false;
     }
 
-    MineSweeperActionResult result = minesweeper_engine_apply_action(
-        &app->game_state, action
-    );
+    MineSweeperActionResult result = minesweeper_engine_apply_action(&app->game_state, action);
 
     process_feedback(app, action.type, result);
 
@@ -174,41 +170,39 @@ static bool handle_gameover_inputs(MineSweeperApp* app, SceneManagerEvent event)
     MineSweeperAction action = {0};
     bool is_move_input = true;
 
-    switch(event.event) {
-        case MineSweeperEventMoveUp:
-            action.type = MineSweeperActionMove;
-            action.dy = -1;
-            break;
-        case MineSweeperEventMoveDown:
-            action.type = MineSweeperActionMove;
-            action.dy = 1;
-            break;
-        case MineSweeperEventMoveLeft:
-            action.type = MineSweeperActionMove;
-            action.dx = -1;
-            break;
-        case MineSweeperEventMoveRight:
-            action.type = MineSweeperActionMove;
-            action.dx = 1;
-            break;
-        case MineSweeperEventShortOkPress:
-        case MineSweeperEventLongOkPress:
-        case MineSweeperEventBackLong:
-            is_move_input = false;
-            break;
-        default:
-            return false;
+    switch (event.event) {
+    case MineSweeperEventMoveUp:
+        action.type = MineSweeperActionMove;
+        action.dy = -1;
+        break;
+    case MineSweeperEventMoveDown:
+        action.type = MineSweeperActionMove;
+        action.dy = 1;
+        break;
+    case MineSweeperEventMoveLeft:
+        action.type = MineSweeperActionMove;
+        action.dx = -1;
+        break;
+    case MineSweeperEventMoveRight:
+        action.type = MineSweeperActionMove;
+        action.dx = 1;
+        break;
+    case MineSweeperEventShortOkPress:
+    case MineSweeperEventLongOkPress:
+    case MineSweeperEventBackLong:
+        is_move_input = false;
+        break;
+    default:
+        return false;
     }
 
-    if(!is_move_input) {
+    if (!is_move_input) {
         app->generation_origin = MineSweeperGenerationOriginGame;
         scene_manager_next_scene(app->scene_manager, MineSweeperSceneGenerating);
         return true;
     }
 
-    MineSweeperActionResult result = minesweeper_engine_apply_action(
-        &app->game_state, action
-    );
+    MineSweeperActionResult result = minesweeper_engine_apply_action(&app->game_state, action);
 
     if (result.result != MineSweeperResultNoop) {
         // force redraw necessary??
@@ -220,7 +214,7 @@ static bool handle_gameover_inputs(MineSweeperApp* app, SceneManagerEvent event)
 void minesweeper_scene_game_screen_on_enter(void* context) {
     furi_assert(context);
     MineSweeperApp* app = context;
-    
+
     furi_assert(app->game_screen);
 
     // Set to game state struct
@@ -242,12 +236,12 @@ bool minesweeper_scene_game_screen_on_event(void* context, SceneManagerEvent eve
     }
 
     if (event.type == SceneManagerEventTypeCustom) {
-        return app->game_state.rt.phase == MineSweeperPhasePlaying
-            ? handle_playing_inputs(app, event)
-            : handle_gameover_inputs(app, event);
+        return app->game_state.rt.phase == MineSweeperPhasePlaying ?
+                   handle_playing_inputs(app, event) :
+                   handle_gameover_inputs(app, event);
     }
 
-    if(event.type == SceneManagerEventTypeTick) {
+    if (event.type == SceneManagerEventTypeTick) {
         mine_sweeper_game_screen_update_clock(app->game_screen);
         return true;
     }

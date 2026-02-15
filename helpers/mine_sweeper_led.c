@@ -10,9 +10,8 @@ static inline MineSweeperApp* mine_sweeper_led_get_app(void* context) {
     return app;
 }
 
-static inline void mine_sweeper_led_play_sequence(
-    MineSweeperApp* app,
-    const NotificationSequence* sequence) {
+static inline void
+    mine_sweeper_led_play_sequence(MineSweeperApp* app, const NotificationSequence* sequence) {
     furi_assert(app);
     furi_assert(sequence);
     furi_assert(app->notification);
@@ -34,13 +33,13 @@ void mine_sweeper_led_set_rgb(void* context, int red, int green, int blue) {
 
     mine_sweeper_led_play_sequence(app, &sequence_reset_rgb);
 
-    if(red_on) {
+    if (red_on) {
         mine_sweeper_led_play_sequence(app, &sequence_set_red_255);
     }
-    if(green_on) {
+    if (green_on) {
         mine_sweeper_led_play_sequence(app, &sequence_set_green_255);
     }
-    if(blue_on) {
+    if (blue_on) {
         mine_sweeper_led_play_sequence(app, &sequence_set_blue_255);
     }
 }

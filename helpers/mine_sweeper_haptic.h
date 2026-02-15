@@ -9,5 +9,4 @@ void mine_sweeper_play_haptic_lose(void* context);
 
 void mine_sweeper_play_haptic_win(void* context);
 
-
 #endif

@@ -43,15 +43,15 @@ static bool minesweeper_generating_view_input(InputEvent* event, void* context) 
 
     MineSweeperGeneratingView* instance = context;
 
-    if(event->key == InputKeyBack) {
+    if (event->key == InputKeyBack) {
         // Generating flow is non-interruptible via Back.
         return true;
     }
 
-    if(event->key == InputKeyOk &&
-       (event->type == InputTypePress || event->type == InputTypeShort ||
-        event->type == InputTypeLong) &&
-       instance->input_callback) {
+    if (event->key == InputKeyOk &&
+        (event->type == InputTypePress || event->type == InputTypeShort ||
+         event->type == InputTypeLong) &&
+        instance->input_callback) {
         instance->input_callback(MineSweeperGeneratingEventStartNow, instance->context);
         return true;
     }
@@ -61,7 +61,7 @@ static bool minesweeper_generating_view_input(InputEvent* event, void* context) 
 
 MineSweeperGeneratingView* minesweeper_generating_view_alloc(void) {
     MineSweeperGeneratingView* instance = malloc(sizeof(MineSweeperGeneratingView));
-    if(!instance) {
+    if (!instance) {
         return NULL;
     }
 
@@ -71,9 +71,7 @@ MineSweeperGeneratingView* minesweeper_generating_view_alloc(void) {
 
     view_set_context(instance->view, instance);
     view_allocate_model(
-        instance->view,
-        ViewModelTypeLocking,
-        sizeof(MineSweeperGeneratingViewModel));
+        instance->view, ViewModelTypeLocking, sizeof(MineSweeperGeneratingViewModel));
     view_set_draw_callback(instance->view, minesweeper_generating_view_draw);
     view_set_input_callback(instance->view, minesweeper_generating_view_input);
 

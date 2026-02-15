@@ -12,10 +12,9 @@ bool minesweeper_scene_start_screen_input_callback(InputEvent* event, void* cont
 
     MineSweeperApp* app = context;
 
-    if(event->key == InputKeyOk && event->type == InputTypeShort) {
+    if (event->key == InputKeyOk && event->type == InputTypeShort) {
         view_dispatcher_send_custom_event(
-            app->view_dispatcher,
-            MineSweeperSceneStartScreenContinueEvent);
+            app->view_dispatcher, MineSweeperSceneStartScreenContinueEvent);
         return true;
     }
 
@@ -32,19 +31,17 @@ void minesweeper_scene_start_screen_secondary_draw_callback(Canvas* canvas, void
 void minesweeper_scene_start_screen_on_enter(void* context) {
     furi_assert(context);
     MineSweeperApp* app = context;
-    
+
     furi_assert(app->start_screen);
 
     start_screen_set_context(app->start_screen, app);
 
     start_screen_set_input_callback(
-            app->start_screen,
-            minesweeper_scene_start_screen_input_callback);
+        app->start_screen, minesweeper_scene_start_screen_input_callback);
 
     start_screen_set_secondary_draw_callback(
-            app->start_screen,
-            minesweeper_scene_start_screen_secondary_draw_callback);
-    
+        app->start_screen, minesweeper_scene_start_screen_secondary_draw_callback);
+
     start_screen_set_icon_animation(app->start_screen, 0, 0, &A_StartScreen_128x64);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, MineSweeperStartScreenView);
