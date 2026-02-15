@@ -10,7 +10,7 @@ App(
         "gui",
         "storage",                     # Require if we do any r/w to storage
     ],
-    stack_size=(2 * 1024),
+    stack_size=(4 * 1024),
 
     fap_libs=["assets"],                # Not sure if needed
     fap_icon_assets="assets",           # Image assets to compile for this application
