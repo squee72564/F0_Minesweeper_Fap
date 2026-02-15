@@ -13,7 +13,7 @@
 #include <notification/notification_messages.h>
 
 #include "views/start_screen.h"
-#include "views/minesweeper_game_screen.h"
+#include "views/minesweeper_game_screen2.h"
 
 // This is a helper struct for the settings view/scene
 typedef struct {
@@ -44,6 +44,8 @@ typedef struct MineSweeperApp {
 
     MineSweeperAppSettings settings_committed;
     MineSweeperAppSettings settings_draft;
+
+    MineSweeperState game_state;
 
     uint8_t is_settings_changed;
 

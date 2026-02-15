@@ -1,6 +1,7 @@
 #include "minesweeper.h"
 
 #include <string.h> //memset
+#include <dolphin/dolphin.h>
 #include "scenes/minesweeper_scene.h"
 #include "helpers/mine_sweeper_storage.h"
 #include "helpers/mine_sweeper_config.h"
@@ -112,13 +113,23 @@ static MineSweeperApp* app_alloc(void) {
     }
     view_dispatcher_add_view(app->view_dispatcher, MineSweeperLoadingView, loading_get_view(app->loading));
 
-    app->game_screen = mine_sweeper_game_screen_alloc(
-            app->settings_committed.board_width,
-            app->settings_committed.board_height,
-            app->settings_committed.difficulty,
-            // Keep cold-start generation non-blocking until Stage 3 solver safeguards land.
-            false,
-            app->wrap_enabled);
+    MineSweeperConfig initial_config = {
+        .width = app->settings_committed.board_width,
+        .height = app->settings_committed.board_height,
+        .difficulty = app->settings_committed.difficulty,
+        // Keep cold-start generation non-blocking until Stage 3 solver safeguards land.
+        .ensure_solvable = false,
+        .wrap_enabled = app->wrap_enabled,
+    };
+
+    if(minesweeper_engine_set_config(&app->game_state, &initial_config) ==
+       MineSweeperResultInvalid) {
+        FURI_LOG_E(TAG, "Failed to set initial game config");
+        goto cleanup;
+    }
+    minesweeper_engine_new_game(&app->game_state);
+
+    app->game_screen = mine_sweeper_game_screen_alloc();
     if(!app->game_screen) {
         FURI_LOG_E(TAG, "Failed to allocate game screen");
         goto cleanup;

@@ -1,7 +1,6 @@
 #include <inttypes.h>
 
 #include "minesweeper.h"
-#include "views/minesweeper_game_screen.h"
 #include "scenes/minesweeper_scene.h"
 #include "helpers/mine_sweeper_storage.h"
 #include "helpers/mine_sweeper_config.h"
@@ -340,7 +339,14 @@ bool minesweeper_scene_settings_screen_on_event(void* context, SceneManagerEvent
 
             case MineSweeperSettingsScreenEventWrapChange : 
                 mine_sweeper_save_settings(app);
-                mine_sweeper_game_screen_set_wrap_enable(app->game_screen, app->wrap_enabled);
+                {
+                    MineSweeperConfig config = app->game_state.config;
+                    config.wrap_enabled = app->wrap_enabled;
+                    if(minesweeper_engine_set_config(&app->game_state, &config) ==
+                       MineSweeperResultInvalid) {
+                        FURI_LOG_E(TAG, "Failed to apply wrap setting to engine");
+                    }
+                }
                 break;
 
             case MineSweeperSettingsScreenEventFeedbackChange : 

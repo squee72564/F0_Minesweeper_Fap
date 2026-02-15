@@ -1,6 +1,9 @@
 #include "minesweeper.h"
 #include "helpers/mine_sweeper_config.h"
 #include "scenes/minesweeper_scene.h"
+#include "minesweeper_redux_icons.h"
+
+#include <furi_hal.h>
 
 static const char* farewellPrompts[] = {
     "Leaving so\n   soon?",
