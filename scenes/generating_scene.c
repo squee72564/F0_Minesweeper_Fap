@@ -125,7 +125,7 @@ bool minesweeper_scene_generating_on_event(void* context, SceneManagerEvent even
         }
 
         MineSweeperGenerationStatus status =
-            minesweeper_engine_generation_step(&app->generation_job, 24);
+            minesweeper_engine_generation_step(&app->generation_job, 16);
         minesweeper_scene_generating_update_stats(app);
 
         if(status == MineSweeperGenerationStatusReady) {
