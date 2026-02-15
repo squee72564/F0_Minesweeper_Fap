@@ -11,16 +11,15 @@ bool minesweeper_scene_start_screen_input_callback(InputEvent* event, void* cont
     furi_assert(context);
 
     MineSweeperApp* app = context;
-    bool consumed = false;
 
-    if (event->key != InputKeyBack) {
-
-        consumed = scene_manager_handle_custom_event(
-                        app->scene_manager,
-                        MineSweeperSceneStartScreenContinueEvent); 
+    if(event->key == InputKeyOk && event->type == InputTypeShort) {
+        view_dispatcher_send_custom_event(
+            app->view_dispatcher,
+            MineSweeperSceneStartScreenContinueEvent);
+        return true;
     }
 
-    return consumed;
+    return false;
 }
 
 void minesweeper_scene_start_screen_secondary_draw_callback(Canvas* canvas, void* _model) {
