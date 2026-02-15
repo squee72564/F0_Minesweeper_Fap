@@ -446,8 +446,14 @@ MineSweeperResult minesweeper_engine_reveal(MineSweeperState* game_state, uint16
     MineSweeperBoard* board = &game_state->board;
 
     uint16_t cursor_pos_1d = board_index(board, x, y);
+    MineSweeperCell tile = board->cells[cursor_pos_1d];
 
-    if (CELL_IS_MINE(board->cells[cursor_pos_1d])) {
+    // Revealing a flagged (or already revealed) tile is a no-op.
+    if (CELL_IS_FLAGGED(tile) || CELL_IS_REVEALED(tile)) {
+        return MineSweeperResultNoop;
+    }
+
+    if (CELL_IS_MINE(tile)) {
         minesweeper_engine_reveal_all_mines(game_state);
         return MineSweeperResultLose;
     }
