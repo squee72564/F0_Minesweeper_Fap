@@ -197,9 +197,7 @@ MineSweeperResult minesweeper_engine_reveal_all_mines(MineSweeperState* game_sta
 
 MineSweeperResult minesweeper_engine_check_win_conditions(MineSweeperState* game_state);
 
-MineSweeperResult minesweeper_engine_apply_action(MineSweeperState* game_state, MineSweeperAction action);
-
-MineSweeperActionResult minesweeper_engine_apply_action_ex(MineSweeperState* game_state, MineSweeperAction action);
+MineSweeperActionResult minesweeper_engine_apply_action(MineSweeperState* game_state, MineSweeperAction action);
 
 MineSweeperResult minesweeper_engine_set_config(
     MineSweeperState* game_state,

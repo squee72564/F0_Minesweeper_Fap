@@ -157,7 +157,7 @@ static bool handle_playing_inputs(MineSweeperApp* app, SceneManagerEvent event) 
             return false;
     }
 
-    MineSweeperActionResult result = minesweeper_engine_apply_action_ex(
+    MineSweeperActionResult result = minesweeper_engine_apply_action(
         &app->game_state, action
     );
 
@@ -206,7 +206,7 @@ static bool handle_gameover_inputs(MineSweeperApp* app, SceneManagerEvent event)
         return true;
     }
 
-    MineSweeperActionResult result = minesweeper_engine_apply_action_ex(
+    MineSweeperActionResult result = minesweeper_engine_apply_action(
         &app->game_state, action
     );
 

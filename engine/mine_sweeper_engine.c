@@ -777,15 +777,6 @@ MineSweeperResult minesweeper_engine_reveal_all_mines(MineSweeperState* game_sta
     return minesweeper_engine_reveal_all_tiles(game_state);
 }
 
-MineSweeperResult minesweeper_engine_apply_action(
-    MineSweeperState* game_state,
-    MineSweeperAction action
-) {
-    furi_assert(game_state);
-    MineSweeperActionResult detailed = minesweeper_engine_apply_action_ex(game_state, action);
-    return detailed.result;
-}
-
 static MineSweeperMoveOutcome minesweeper_engine_classify_move_outcome(
     const MineSweeperState* game_state,
     uint8_t prev_col,
@@ -827,7 +818,7 @@ static MineSweeperMoveOutcome minesweeper_engine_classify_move_outcome(
     return MineSweeperMoveOutcomeNone;
 }
 
-MineSweeperActionResult minesweeper_engine_apply_action_ex(
+MineSweeperActionResult minesweeper_engine_apply_action(
     MineSweeperState* game_state,
     MineSweeperAction action
 ) {
