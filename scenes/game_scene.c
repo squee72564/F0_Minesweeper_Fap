@@ -5,7 +5,7 @@
 #include "minesweeper.h"
 #include "scenes/minesweeper_scene.h"
 #include "engine/mine_sweeper_engine.h"
-#include "views/minesweeper_game_screen2.h"
+#include "views/minesweeper_game_screen.h"
 #include <input/input.h>
 
 static void mine_sweeper_game_screen_action_callback(MineSweeperEvent event, void* context) {

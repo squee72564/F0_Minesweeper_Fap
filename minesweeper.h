@@ -14,7 +14,7 @@
 #include <notification/notification_messages.h>
 
 #include "views/start_screen.h"
-#include "views/minesweeper_game_screen2.h"
+#include "views/minesweeper_game_screen.h"
 #include "views/minesweeper_generating_view.h"
 
 // This is a helper struct for the settings view/scene

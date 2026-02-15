@@ -3,8 +3,8 @@
  * GUI: Start Screen view module API
  */
 
-#ifndef MINEWEEPER_GAME_SCREEN_H2
-#define MINEWEEPER_GAME_SCREEN_H2
+#ifndef MINESWEEPER_GAME_SCREEN_H
+#define MINESWEEPER_GAME_SCREEN_H
 
 #include <gui/view.h>
 #include <input/input.h>

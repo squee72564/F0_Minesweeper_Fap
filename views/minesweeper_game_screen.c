@@ -1,4 +1,4 @@
-#include "views/minesweeper_game_screen2.h"
+#include "views/minesweeper_game_screen.h"
 #include "engine/mine_sweeper_engine.h"
 #include "gui/canvas.h"
 #include "gui/view.h"
