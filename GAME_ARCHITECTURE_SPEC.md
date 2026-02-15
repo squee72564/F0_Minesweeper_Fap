@@ -45,9 +45,9 @@ Implemented in `engine/mine_sweeper_engine.*`:
 
 Still in progress:
 
-- View is still performing substantial gameplay mutations directly.
-- Scene is not yet the primary gameplay orchestrator.
-- Game screen view callback contract still forwards raw `InputEvent` only.
+- Add an explicit scene->view `apply_projection(...)` API (current view reads `MineSweeperState*` directly).
+- Add coordinate bounds hardening for direct coordinate-taking engine calls used outside action dispatch.
+- Move solver generation to non-blocking/chunked flow (deferred by product choice for now).
 
 ## 3. Architecture Layers
 
@@ -218,9 +218,9 @@ Low-level board functions are internal mutation primitives and must not own runt
 Target flow:
 
 1. Firmware sends `InputEvent` into view input callback.
-2. View maps input to `MineSweeperAction` payload.
-3. View forwards action via scene-registered callback.
-4. Scene calls `minesweeper_engine_apply_action(...)` (default path).
+2. View maps input to high-level `MineSweeperEvent`.
+3. View forwards event via scene-registered callback.
+4. Scene maps event to `MineSweeperAction` and calls engine action dispatch.
 5. Engine returns result + mutated state.
 6. Scene runs effects and transitions.
 7. Scene projects engine snapshot into view model.
@@ -246,8 +246,8 @@ At scene exit:
 View should expose explicit APIs:
 
 - `set_context(...)`
-- `set_action_callback(...)`
-- `apply_projection(...)`
+- `set_input_callback(...)` (high-level game events)
+- `apply_projection(...)` (recommended next step; currently deferred)
 
 View should return consumed/not-consumed from raw input callback, but rule execution belongs to scene+engine.
 
@@ -264,8 +264,8 @@ The following are now considered technical debt and should be removed during mig
 
 - Engine: `engine/mine_sweeper_engine.h`, `engine/mine_sweeper_engine.c`
 - Solver: `engine/mine_sweeper_solver.h`, `engine/mine_sweeper_solver.c`
-- Gameplay scene orchestrator: `scenes/game_screen_scene.c`
-- Gameplay view: `views/minesweeper_game_screen.h`, `views/minesweeper_game_screen.c`
+- Gameplay scene orchestrator: `scenes/game_scene.c`
+- Gameplay view: `views/minesweeper_game_screen2.h`, `views/minesweeper_game_screen2.c`
 
 ## 10. Migration Plan (Updated)
 
@@ -280,23 +280,23 @@ The following are now considered technical debt and should be removed during mig
 - Added config/runtime/state validation APIs for restore flows.
 - Aligned reveal/chord return behavior to true mutation semantics (`NOOP` vs `CHANGED`).
 
-## Stage 2 (Next)
+## Stage 2 (Completed)
 
-- Add game screen setter for scene-owned action callback (parallel to start screen pattern).
-- Move input mapping in view from direct mutation to action emission.
-- Move gameplay action handling into `scenes/game_screen_scene.c` via `apply_action`.
-- Keep view as projection-only for authoritative gameplay data.
-- Add scene->view projection update API and remove direct rule mutation in view callbacks.
+- Added game screen setter for scene-owned callback.
+- Moved input mapping in view to high-level event emission.
+- Moved gameplay action handling into `scenes/game_scene.c` through engine action dispatch.
+- Removed legacy gameplay scene/view modules from active build path.
+- Kept gameplay rules in engine and side effects in scene.
 
 ## Stage 3
 
-- Remove remaining direct board mutation helpers from view gameplay paths.
-- Ensure scene is sole path to call engine gameplay actions.
+- Add explicit `apply_projection(...)` scene->view API (currently view reads state pointer directly).
+- Add targeted hardening for direct coordinate engine entry points.
 - Verify all side effects are scene-triggered from engine result codes.
 
 ## Stage 4
 
-- Integrate non-blocking solver service (chunked, event-driven).
+- Integrate non-blocking solver service (chunked, event-driven) when required by UX/perf goals.
 - Keep solver off heavy loops in view callbacks.
 
 ## 11. Validation Matrix
@@ -317,12 +317,14 @@ Run after each migration stage:
 
 ## 12. Engine Dispatch Guideline
 
-`minesweeper_engine_apply_action(...)` is the preferred engine entry point from scene callbacks.
+`minesweeper_engine_apply_action_ex(...)` is the preferred engine entry point from scene callbacks when move outcome metadata is needed for feedback.
+
+`minesweeper_engine_apply_action(...)` remains a compatibility wrapper returning the coarse result code only.
 
 Guideline:
 
 - Keep specialized engine actions (`reveal`, `flag`, `chord`, `move_cursor`, `new_game`) for focused testing and reuse.
-- Keep `apply_action` as a thin, deterministic dispatcher over those specialized functions.
+- Keep `apply_action_ex` as a thin, deterministic dispatcher over those specialized functions.
 - Keep side effects and scene transitions outside engine.
 
 Benefits:
@@ -333,7 +335,6 @@ Benefits:
 
 ## 13. Immediate Next Steps
 
-1. Add game screen action callback setter and register it in `scenes/game_screen_scene.c`.
-2. Route all gameplay actions through `minesweeper_engine_apply_action(...)`.
-3. Add engine->view projection update path and remove direct gameplay mutation from `views/minesweeper_game_screen.c`.
-4. Add or confirm coordinate bounds checks for direct coordinate-taking engine calls used outside `apply_action`.
+1. Add an explicit scene->view `apply_projection(...)` path for cleaner snapshot boundaries.
+2. Add/confirm coordinate bounds checks for direct coordinate-taking engine calls used outside action dispatch.
+3. If needed, migrate solvable-board generation to non-blocking background/chunked flow.
