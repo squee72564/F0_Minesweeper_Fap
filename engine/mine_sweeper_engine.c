@@ -230,10 +230,10 @@ uint16_t board_reveal_flood(MineSweeperBoard* board, uint8_t x, uint8_t y) {
     uint16_t cleared_tiles = 0;
 
     point_deq_t deq;
-    point_set_t visited;
+    uint8_t visited[(BOARD_MAX_TILES + 7u) / 8u];
 
     point_deq_init(deq);
-    point_set_init(visited);
+    point_visited_clear(visited, (uint16_t)board->width * board->height);
 
     Point_t pos;
     pointobj_init(pos);
@@ -247,14 +247,14 @@ uint16_t board_reveal_flood(MineSweeperBoard* board, uint8_t x, uint8_t y) {
         Point curr_pos = pointobj_get_point(pos);
         uint16_t curr_pos_1d = board_index(board, curr_pos.x, curr_pos.y);
 
-        if (point_set_cget(visited, pos) != NULL || CELL_IS_REVEALED(board->cells[curr_pos_1d]) ||
+        if (point_visited_test(visited, curr_pos_1d) || CELL_IS_REVEALED(board->cells[curr_pos_1d]) ||
             CELL_IS_FLAGGED(board->cells[curr_pos_1d])) {
             continue;
         }
 
         board_reveal_cell(board, curr_pos.x, curr_pos.y);
 
-        point_set_push(visited, pos);
+        point_visited_set(visited, curr_pos_1d);
 
         cleared_tiles++;
 
@@ -264,15 +264,15 @@ uint16_t board_reveal_flood(MineSweeperBoard* board, uint8_t x, uint8_t y) {
                 int16_t dy = (int16_t)curr_pos.y + neighbor_offsets[n][1];
 
                 if (board_in_bounds(board, (int8_t)dx, (int8_t)dy)) {
+                    const uint16_t neighbor_pos_1d = board_index(board, (uint8_t)dx, (uint8_t)dy);
+                    if (point_visited_test(visited, neighbor_pos_1d)) continue;
                     pointobj_set_point(pos, (Point){.x = (uint8_t)dx, .y = (uint8_t)dy});
-                    if (point_set_cget(visited, pos) != NULL) continue;
                     point_deq_push_back(deq, pos);
                 }
             }
         }
     }
 
-    point_set_clear(visited);
     point_deq_clear(deq);
 
     return cleared_tiles;
@@ -640,12 +640,12 @@ MineSweeperResult minesweeper_engine_move_to_closest_tile(MineSweeperState* game
     point_deq_t deq2;
     point_deq_init(deq2);
 
-    // Init both the set and dequeue
+    // Init dequeue and visited bitset used for BFS traversal
     point_deq_t deq;
-    point_set_t set;
+    uint8_t visited[(BOARD_MAX_TILES + 7u) / 8u];
 
     point_deq_init(deq);
-    point_set_init(set);
+    point_visited_clear(visited, (uint16_t)board->width * board->height);
 
     // Point_t pos will be used to keep track of the current point
     Point_t pos;
@@ -664,11 +664,11 @@ MineSweeperResult minesweeper_engine_move_to_closest_tile(MineSweeperState* game
         Point curr_pos = pointobj_get_point(pos);
         uint16_t curr_pos_1d = board_index(&game_state->board, curr_pos.x, curr_pos.y);
 
-        if (point_set_cget(set, pos) != NULL) {
+        if (point_visited_test(visited, curr_pos_1d)) {
             continue;
         }
 
-        point_set_push(set, pos);
+        point_visited_set(visited, curr_pos_1d);
 
         // Do not continue if we have found some valid tiles and this is cleared
         if (is_uncleared_tile_found && CELL_IS_REVEALED(game_state->board.cells[curr_pos_1d])) {
@@ -694,7 +694,6 @@ MineSweeperResult minesweeper_engine_move_to_closest_tile(MineSweeperState* game
         }
     }
 
-    point_set_clear(set);
     point_deq_clear(deq);
 
     double min_distance = INT_MAX;

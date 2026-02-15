@@ -16,7 +16,7 @@ void bfs_tile_clear_solver(
     uint16_t x,
     uint16_t y,
     point_deq_t* edges,
-    point_set_t* visited);
+    uint8_t* visited);
 
 #ifdef __cplusplus
 }

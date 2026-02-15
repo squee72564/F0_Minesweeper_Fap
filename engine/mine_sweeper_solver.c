@@ -6,10 +6,10 @@ bool check_board_with_solver(MineSweeperBoard* board) {
     furi_assert(board);
 
     point_deq_t deq;
-    point_set_t visited;
+    uint8_t visited[(BOARD_MAX_TILES + 7u) / 8u];
 
     point_deq_init(deq);
-    point_set_init(visited);
+    point_visited_clear(visited, (uint16_t)board->width * board->height);
 
     uint16_t total_mines = board->mine_count;
     bool is_solvable = false;
@@ -20,7 +20,7 @@ bool check_board_with_solver(MineSweeperBoard* board) {
 
     pointobj_set_point(pos, (Point){.x = 0, .y = 0});
 
-    bfs_tile_clear_solver(board, 0, 0, &deq, &visited);
+    bfs_tile_clear_solver(board, 0, 0, &deq, visited);
 
     while (!is_solvable && !has_invalid_flag_deduction && point_deq_size(deq) > 0) {
         bool is_stuck = true;
@@ -75,7 +75,7 @@ bool check_board_with_solver(MineSweeperBoard* board) {
                     const MineSweeperCell neighbor_cell = board->cells[neighbor_pos_1d];
 
                     if (!CELL_IS_REVEALED(neighbor_cell) && !CELL_IS_FLAGGED(neighbor_cell)) {
-                        bfs_tile_clear_solver(board, dx, dy, &deq, &visited);
+                        bfs_tile_clear_solver(board, dx, dy, &deq, visited);
                     }
                 }
 
@@ -116,7 +116,6 @@ bool check_board_with_solver(MineSweeperBoard* board) {
         if (is_stuck) break;
     }
 
-    point_set_clear(visited);
     point_deq_clear(deq);
 
     return is_solvable;
@@ -127,7 +126,7 @@ void bfs_tile_clear_solver(
     uint16_t x,
     uint16_t y,
     point_deq_t* edges,
-    point_set_t* visited) {
+    uint8_t* visited) {
     furi_assert(board);
     furi_assert(edges);
     furi_assert(visited);
@@ -148,12 +147,12 @@ void bfs_tile_clear_solver(
         uint16_t curr_pos_1d = board_index(board, curr_pos.x, curr_pos.y);
         MineSweeperCell curr_cell = board->cells[curr_pos_1d];
 
-        if (point_set_cget(*visited, pos) != NULL || CELL_IS_REVEALED(curr_cell) ||
+        if (point_visited_test(visited, curr_pos_1d) || CELL_IS_REVEALED(curr_cell) ||
             CELL_IS_FLAGGED(curr_cell)) {
             continue;
         }
 
-        point_set_push(*visited, pos);
+        point_visited_set(visited, curr_pos_1d);
 
         uint8_t neighbor_bomb_count = CELL_GET_NEIGHBORS(curr_cell);
 
@@ -174,9 +173,10 @@ void bfs_tile_clear_solver(
 
             if (!board_in_bounds(board, dx, dy)) continue;
 
-            pointobj_set_point(pos, (Point){.x = dx, .y = dy});
+            const uint16_t neighbor_pos_1d = board_index(board, (uint8_t)dx, (uint8_t)dy);
+            if (point_visited_test(visited, neighbor_pos_1d)) continue;
 
-            if (point_set_cget(*visited, pos) != NULL) continue;
+            pointobj_set_point(pos, (Point){.x = (uint8_t)dx, .y = (uint8_t)dy});
 
             point_deq_push_back(deq, pos);
         }
