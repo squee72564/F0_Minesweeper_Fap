@@ -10,7 +10,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif // __cplusplus
 
 /** StartScreen anonymous structure */
 typedef struct StartScreen StartScreen;
@@ -152,6 +152,6 @@ void start_screen_set_icon_animation(
 
 #ifdef __cplusplus
 }
-#endif
+#endif // __cplusplus
 
-#endif
+#endif // START_SCREEN_H

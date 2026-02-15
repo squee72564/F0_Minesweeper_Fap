@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 typedef enum {
     MineSweeperPhasePlaying = 0,
     MineSweeperPhaseWon,
@@ -207,4 +211,8 @@ MineSweeperResult
 
 MineSweeperResult minesweeper_engine_validate_state(const MineSweeperState* game_state);
 
-#endif
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#endif // MINE_SWEEPER_ENGINE_H

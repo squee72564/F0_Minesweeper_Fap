@@ -17,6 +17,10 @@
 #include "views/minesweeper_game_screen.h"
 #include "views/minesweeper_generating_view.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 // This is a helper struct for the settings view/scene
 typedef struct {
     uint8_t board_width, board_height, difficulty;
@@ -95,4 +99,8 @@ typedef enum {
     MineSweeperLedOn,
 } MineSweeperLedState;
 
-#endif
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#endif // MINESWEEPER_H

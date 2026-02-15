@@ -5,6 +5,10 @@
 #include "mine_sweeper_engine.h"
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 bool check_board_with_solver(MineSweeperBoard* board);
 
 void bfs_tile_clear_solver(
@@ -13,5 +17,9 @@ void bfs_tile_clear_solver(
     uint16_t y,
     point_deq_t* edges,
     point_set_t* visited);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // MINE_SWEEPER_SOLVER_H

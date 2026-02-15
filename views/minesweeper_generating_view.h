@@ -6,6 +6,10 @@
 
 #include "engine/mine_sweeper_engine.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 typedef struct MineSweeperGeneratingView MineSweeperGeneratingView;
 
 typedef enum {
@@ -30,4 +34,8 @@ void minesweeper_generating_view_set_stats(
 
 void minesweeper_generating_view_reset(MineSweeperGeneratingView* instance);
 
-#endif
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#endif // MINESWEEPER_GENERATING_VIEW_H

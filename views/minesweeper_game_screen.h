@@ -30,7 +30,7 @@ typedef enum {
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif // __cplusplus
 
 /** MineSweeperGameScreen anonymous structure */
 typedef struct MineSweeperGameScreen MineSweeperGameScreen;
@@ -91,6 +91,6 @@ void mine_sweeper_game_screen_set_context(
 
 #ifdef __cplusplus
 }
-#endif
+#endif // __cplusplus
 
-#endif
+#endif // MINESWEEPER_GAME_SCREEN_H

@@ -1,6 +1,10 @@
 #ifndef MINE_SWEEPER_CONFIG_H
 #define MINE_SWEEPER_CONFIG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 // Application tag for logging
 #define TAG "Mine Sweeper Application"
 
@@ -18,5 +22,9 @@
 #define MINESWEEPER_SETTINGS_KEY_FEEDBACK   "FeedbackEnabled"
 #define MINESWEEPER_SETTINGS_KEY_WRAP       "WrapEnabled"
 #define MINESWEEPER_SETTINGS_KEY_SOLVABLE   "EnsureSolvable"
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // MINE_SWEEPER_CONFIG_H
