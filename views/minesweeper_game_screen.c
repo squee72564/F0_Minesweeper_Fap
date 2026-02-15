@@ -308,10 +308,15 @@ static void mine_sweeper_game_screen_draw_callback(Canvas* canvas, void* _model)
 MineSweeperGameScreen* mine_sweeper_game_screen_alloc(void) {
     MineSweeperGameScreen* mine_sweeper_game_screen =
         (MineSweeperGameScreen*)malloc(sizeof(MineSweeperGameScreen));
+    if (!mine_sweeper_game_screen)
+        return NULL;
 
     memset(mine_sweeper_game_screen, 0, sizeof(MineSweeperGameScreen));
 
     mine_sweeper_game_screen->view = view_alloc();
+    if (mine_sweeper_game_screen->view == NULL)
+        return NULL;
+
     view_set_context(mine_sweeper_game_screen->view, mine_sweeper_game_screen);
     view_allocate_model(
         mine_sweeper_game_screen->view, ViewModelTypeLocking, sizeof(MineSweeperGameScreenModel));
@@ -327,6 +332,8 @@ MineSweeperGameScreen* mine_sweeper_game_screen_alloc(void) {
         {
             memset(model, 0, sizeof(MineSweeperGameScreenModel));
             model->info_str = furi_string_alloc();
+            if (!model->info_str)
+                return NULL;
         },
         false);
 
@@ -339,12 +346,17 @@ void mine_sweeper_game_screen_free(MineSweeperGameScreen* instance) {
     with_view_model(
         instance->view,
         MineSweeperGameScreenModel * model,
-        { furi_string_free(model->info_str); },
+        {
+            if (model->info_str)
+                furi_string_free(model->info_str);
+        },
         false);
 
-    view_free_model(instance->view);
-    view_free(instance->view);
-    free(instance);
+    if (instance->view)
+        view_free(instance->view);
+
+    if (instance)
+        free(instance);
 }
 
 void mine_sweeper_game_screen_reset(MineSweeperGameScreen* instance) {

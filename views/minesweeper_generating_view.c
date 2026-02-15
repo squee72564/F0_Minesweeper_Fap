@@ -66,6 +66,7 @@ MineSweeperGeneratingView* minesweeper_generating_view_alloc(void) {
     }
 
     instance->view = view_alloc();
+    if (instance->view == NULL) return NULL;
     instance->context = NULL;
     instance->input_callback = NULL;
 
@@ -93,9 +94,10 @@ void minesweeper_generating_view_free(MineSweeperGeneratingView* instance) {
     instance->context = NULL;
     instance->input_callback = NULL;
 
-    view_free_model(instance->view);
-    view_free(instance->view);
-    free(instance);
+    if (instance->view)
+        view_free(instance->view);
+    if (instance)
+        free(instance);
 }
 
 View* minesweeper_generating_view_get_view(MineSweeperGeneratingView* instance) {
