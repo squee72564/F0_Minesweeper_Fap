@@ -2,8 +2,10 @@
 #include "mine_sweeper_solver.h"
 #include "mstarlib_helpers.h"
 
+#include <furi.h>
 #include <furi_hal.h>
 #include <stdint.h>
+#include <string.h>
 
 static const float difficulty_multiplier[3] = {
     0.15f,
@@ -332,16 +334,140 @@ void board_toggle_flag(
         CELL_SET_FLAGGED(board->cells[i]);
 }
 
+static uint16_t minesweeper_engine_compute_mine_count(const MineSweeperConfig* config) {
+    furi_assert(config);
+
+    const uint16_t total_cells = (uint16_t)config->width * config->height;
+
+    const uint8_t difficulty = config->difficulty >= 3 ? 2 : config->difficulty;
+    return (uint16_t)(total_cells * difficulty_multiplier[difficulty]);
+}
+
+static void minesweeper_engine_prepare_runtime(MineSweeperState* game_state) {
+    furi_assert(game_state);
+
+    const uint16_t total_cells = (uint16_t)game_state->board.width * game_state->board.height;
+    const uint16_t mine_count = game_state->board.mine_count;
+
+    game_state->rt.tiles_left = total_cells - mine_count;
+    game_state->rt.flags_left = mine_count;
+    game_state->rt.mines_left = mine_count;
+    game_state->rt.phase = MineSweeperPhasePlaying;
+    game_state->rt.cursor_col = 0;
+    game_state->rt.cursor_row = 0;
+}
+
+MineSweeperResult minesweeper_engine_generation_begin(
+    MineSweeperGenerationJob* job,
+    const MineSweeperConfig* config) {
+    if(!job || !config_is_valid(config)) {
+        return MineSweeperResultInvalid;
+    }
+
+    memset(job, 0, sizeof(*job));
+    job->config = *config;
+    job->status = MineSweeperGenerationStatusInProgress;
+    job->start_tick = furi_get_tick();
+
+    return MineSweeperResultChanged;
+}
+
+MineSweeperGenerationStatus minesweeper_engine_generation_step(
+    MineSweeperGenerationJob* job,
+    uint16_t attempt_budget) {
+    if(!job) {
+        return MineSweeperGenerationStatusFailed;
+    }
+
+    if(job->status != MineSweeperGenerationStatusInProgress || attempt_budget == 0) {
+        return job->status;
+    }
+
+    const uint16_t mine_count = minesweeper_engine_compute_mine_count(&job->config);
+
+    for(uint16_t i = 0; i < attempt_budget; ++i) {
+        memset(&job->latest_candidate, 0, sizeof(job->latest_candidate));
+        job->latest_candidate.config = job->config;
+        job->latest_candidate_is_solved = false;
+
+        board_init(&job->latest_candidate.board, job->config.width, job->config.height);
+        board_generate_candidate(&job->latest_candidate.board, mine_count);
+        minesweeper_engine_prepare_runtime(&job->latest_candidate);
+
+        job->has_latest_candidate = true;
+        job->attempts_total++;
+
+        if(!job->config.ensure_solvable) {
+            job->status = MineSweeperGenerationStatusReady;
+            break;
+        }
+
+        const bool is_solvable = check_board_with_solver(&job->latest_candidate.board);
+        board_clear_solver_marks(&job->latest_candidate.board);
+        job->latest_candidate_is_solved = is_solvable;
+
+        if(is_solvable) {
+            job->status = MineSweeperGenerationStatusReady;
+            break;
+        }
+    }
+
+    return job->status;
+}
+
+MineSweeperGenerationStatus minesweeper_engine_generation_status(
+    const MineSweeperGenerationJob* job) {
+    if(!job) {
+        return MineSweeperGenerationStatusFailed;
+    }
+
+    return job->status;
+}
+
+MineSweeperResult minesweeper_engine_generation_finish(
+    MineSweeperGenerationJob* job,
+    MineSweeperState* out_state,
+    bool allow_unsolved_fallback) {
+    if(!job || !out_state) {
+        return MineSweeperResultInvalid;
+    }
+
+    if(job->status == MineSweeperGenerationStatusCancelled ||
+       job->status == MineSweeperGenerationStatusFailed ||
+       job->status == MineSweeperGenerationStatusIdle) {
+        return MineSweeperResultInvalid;
+    }
+
+    if(!job->has_latest_candidate) {
+        return MineSweeperResultInvalid;
+    }
+
+    const bool candidate_allowed =
+        job->latest_candidate_is_solved || !job->config.ensure_solvable || allow_unsolved_fallback;
+    if(!candidate_allowed) {
+        return MineSweeperResultInvalid;
+    }
+
+    *out_state = job->latest_candidate;
+    minesweeper_engine_prepare_runtime(out_state);
+    out_state->rt.start_tick = furi_get_tick();
+    job->status = MineSweeperGenerationStatusReady;
+
+    return MineSweeperResultChanged;
+}
+
+void minesweeper_engine_generation_cancel(MineSweeperGenerationJob* job) {
+    if(!job) {
+        return;
+    }
+
+    job->status = MineSweeperGenerationStatusCancelled;
+}
+
 void minesweeper_engine_new_game(MineSweeperState* game_state) {
     furi_assert(game_state);
 
-    uint16_t total_cells = game_state->board.width * game_state->board.height;
-
-    uint8_t difficulty = game_state->config.difficulty >= 3
-        ? 2
-        : game_state->config.difficulty;
-
-    uint16_t number_mines = total_cells * difficulty_multiplier[difficulty];
+    const uint16_t number_mines = minesweeper_engine_compute_mine_count(&game_state->config);
     bool is_solvable = false;
 
     do {
@@ -355,12 +481,8 @@ void minesweeper_engine_new_game(MineSweeperState* game_state) {
         board_clear_solver_marks(&game_state->board);
     } while(!is_solvable);
 
-    game_state->rt.tiles_left = total_cells - number_mines;
-    game_state->rt.flags_left = number_mines;
-    game_state->rt.mines_left = number_mines;
-    game_state->rt.phase = MineSweeperPhasePlaying;
-    game_state->rt.cursor_col = 0;
-    game_state->rt.cursor_row = 0;
+    minesweeper_engine_prepare_runtime(game_state);
+    game_state->rt.start_tick = furi_get_tick();
 }
 
 MineSweeperResult minesweeper_engine_reveal(MineSweeperState* game_state, uint16_t x, uint16_t y) {

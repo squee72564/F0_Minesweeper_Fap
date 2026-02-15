@@ -115,6 +115,24 @@ typedef struct {
     MineSweeperRuntime rt;
 } MineSweeperState;
 
+typedef enum {
+    MineSweeperGenerationStatusIdle = 0,
+    MineSweeperGenerationStatusInProgress,
+    MineSweeperGenerationStatusReady,
+    MineSweeperGenerationStatusCancelled,
+    MineSweeperGenerationStatusFailed,
+} MineSweeperGenerationStatus;
+
+typedef struct {
+    MineSweeperConfig config;
+    MineSweeperState latest_candidate;
+    uint32_t attempts_total;
+    uint32_t start_tick;
+    bool has_latest_candidate;
+    bool latest_candidate_is_solved;
+    MineSweeperGenerationStatus status;
+} MineSweeperGenerationJob;
+
 typedef struct {
     MineSweeperActionType type;
     int8_t dx;
@@ -144,6 +162,24 @@ void board_toggle_flag(MineSweeperBoard* board, uint8_t x, uint8_t y);
 
 
 /* ---- ENGINE API ---- */
+
+MineSweeperResult minesweeper_engine_generation_begin(
+    MineSweeperGenerationJob* job,
+    const MineSweeperConfig* config);
+
+MineSweeperGenerationStatus minesweeper_engine_generation_step(
+    MineSweeperGenerationJob* job,
+    uint16_t attempt_budget);
+
+MineSweeperGenerationStatus minesweeper_engine_generation_status(
+    const MineSweeperGenerationJob* job);
+
+MineSweeperResult minesweeper_engine_generation_finish(
+    MineSweeperGenerationJob* job,
+    MineSweeperState* out_state,
+    bool allow_unsolved_fallback);
+
+void minesweeper_engine_generation_cancel(MineSweeperGenerationJob* job);
 
 void minesweeper_engine_new_game(MineSweeperState* game_state);
 
