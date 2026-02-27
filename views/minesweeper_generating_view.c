@@ -23,18 +23,21 @@ static void minesweeper_generating_view_draw(Canvas* canvas, void* _model) {
 
     canvas_clear(canvas);
     canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str_aligned(canvas, 64, 4, AlignCenter, AlignTop, "Generating board...");
+    canvas_draw_str_aligned(canvas, 64, 4, AlignCenter, AlignTop, "Generating solvable");
+    canvas_draw_str_aligned(canvas, 64, 14, AlignCenter, AlignTop, "board...");
 
     canvas_set_font(canvas, FontSecondary);
     char line[32];
 
+    canvas_draw_str_aligned(canvas, 64, 24, AlignCenter, AlignTop, "Solvable from 0,0");
+
     snprintf(line, sizeof(line), "Attempts: %lu", (unsigned long)model->attempts_total);
-    canvas_draw_str_aligned(canvas, 2, 18, AlignLeft, AlignTop, line);
+    canvas_draw_str_aligned(canvas, 2, 34, AlignLeft, AlignTop, line);
 
     snprintf(line, sizeof(line), "Elapsed:  %lus", (unsigned long)model->elapsed_seconds);
-    canvas_draw_str_aligned(canvas, 2, 28, AlignLeft, AlignTop, line);
+    canvas_draw_str_aligned(canvas, 2, 44, AlignLeft, AlignTop, line);
 
-    canvas_draw_str_aligned(canvas, 64, 63, AlignCenter, AlignBottom, "OK: Start now");
+    canvas_draw_str_aligned(canvas, 64, 63, AlignCenter, AlignBottom, "OK: Force start now");
 }
 
 static bool minesweeper_generating_view_input(InputEvent* event, void* context) {
