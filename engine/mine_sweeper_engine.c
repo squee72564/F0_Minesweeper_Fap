@@ -657,7 +657,7 @@ MineSweeperResult minesweeper_engine_move_to_closest_tile(MineSweeperState* game
 
     point_deq_push_back(deq, pos);
 
-    bool is_uncleared_tile_found = false;
+    bool is_target_tile_found = false;
 
     while (point_deq_size(deq) > 0) {
         point_deq_pop_front(&pos, deq);
@@ -670,13 +670,14 @@ MineSweeperResult minesweeper_engine_move_to_closest_tile(MineSweeperState* game
 
         point_visited_set(visited, curr_pos_1d);
 
-        // Do not continue if we have found some valid tiles and this is cleared
-        if (is_uncleared_tile_found && CELL_IS_REVEALED(game_state->board.cells[curr_pos_1d])) {
+        // Do not continue if we have found candidate tiles and this tile is revealed.
+        if (is_target_tile_found && CELL_IS_REVEALED(game_state->board.cells[curr_pos_1d])) {
             continue;
         }
 
-        if (!CELL_IS_REVEALED(game_state->board.cells[curr_pos_1d])) {
-            is_uncleared_tile_found = true;
+        if (!CELL_IS_REVEALED(game_state->board.cells[curr_pos_1d]) &&
+            !CELL_IS_FLAGGED(game_state->board.cells[curr_pos_1d])) {
+            is_target_tile_found = true;
             pointobj_set_point(pos, curr_pos);
             point_deq_push_back(deq2, pos);
             continue;
@@ -695,6 +696,11 @@ MineSweeperResult minesweeper_engine_move_to_closest_tile(MineSweeperState* game
     }
 
     point_deq_clear(deq);
+
+    if (!is_target_tile_found) {
+        point_deq_clear(deq2);
+        return MineSweeperResultNoop;
+    }
 
     double min_distance = INT_MAX;
 
