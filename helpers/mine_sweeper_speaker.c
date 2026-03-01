@@ -1,5 +1,5 @@
-#include "mine_sweeper_speaker.h"
-#include "../minesweeper.h"
+#include "minesweeper.h"
+#include "helpers/mine_sweeper_speaker.h"
 
 #include <notification/notification_messages.h>
 #include <notification/notification_messages_notes.h>
@@ -47,14 +47,13 @@ static const NotificationSequence sequence_minesweeper_lose = {
     NULL,
 };
 
-static inline void speaker_play_if_enabled(
-    MineSweeperApp* app,
-    const NotificationSequence* sequence) {
+static inline void
+    speaker_play_if_enabled(MineSweeperApp* app, const NotificationSequence* sequence) {
     furi_assert(app);
     furi_assert(sequence);
     furi_assert(app->notification);
 
-    if(!app->feedback_enabled) {
+    if (!app->feedback_enabled) {
         return;
     }
 

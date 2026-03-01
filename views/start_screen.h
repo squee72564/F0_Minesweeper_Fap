@@ -8,10 +8,9 @@
 
 #include <gui/view.h>
 
-
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif // __cplusplus
 
 /** StartScreen anonymous structure */
 typedef struct StartScreen StartScreen;
@@ -29,7 +28,7 @@ typedef void (*StartScreenDrawCallback)(Canvas* canvas, void* _model);
  *
  * @return      StartScreen view instance 
  */
-StartScreen* start_screen_alloc();
+StartScreen* start_screen_alloc(void);
 
 /** Deinitialize and free Start Screen view
  *
@@ -56,9 +55,7 @@ View* start_screen_get_view(StartScreen* instance);
  * @param       instance StartScreen instance
  * @param       callback StartScreenInputCallback callback
  */
-void start_screen_set_input_callback(
-        StartScreen* instance,
-        StartScreenInputCallback callback);
+void start_screen_set_input_callback(StartScreen* instance, StartScreenInputCallback callback);
 
 /** Set Additional draw callback 
  * 
@@ -70,8 +67,8 @@ void start_screen_set_input_callback(
  * @param callback StartScreenDrawCallback callback
  */
 void start_screen_set_secondary_draw_callback(
-        StartScreen* instance,
-        StartScreenDrawCallback callback);
+    StartScreen* instance,
+    StartScreenDrawCallback callback);
 
 /** Set StartScreen context 
  *
@@ -94,13 +91,13 @@ void start_screen_set_context(StartScreen* instance, void* context);
  * @param[in]  text        The text
  */
 void start_screen_set_text1(
-        StartScreen* instance,
-        uint8_t x,
-        uint8_t y,
-        Align horizontal,
-        Align vertical,
-        Font font,
-        const char* text);
+    StartScreen* instance,
+    uint8_t x,
+    uint8_t y,
+    Align horizontal,
+    Align vertical,
+    Font font,
+    const char* text);
 
 /** Set Text2 Element
  *
@@ -113,14 +110,14 @@ void start_screen_set_text1(
  * @param[in]  text        The text
  */
 void start_screen_set_text2(
-        StartScreen* instance,
-        uint8_t x,
-        uint8_t y,
-        Align horizontal,
-        Align vertical,
-        Font font,
-        const char* text);
-        
+    StartScreen* instance,
+    uint8_t x,
+    uint8_t y,
+    Align horizontal,
+    Align vertical,
+    Font font,
+    const char* text);
+
 /** Set Text3 Element
  *
  * @param      instance StartScreen instance
@@ -132,13 +129,13 @@ void start_screen_set_text2(
  * @param[in]  text        The text
  */
 void start_screen_set_text3(
-        StartScreen* instance,
-        uint8_t x,
-        uint8_t y,
-        Align horizontal,
-        Align vertical,
-        Font font,
-        const char* text);
+    StartScreen* instance,
+    uint8_t x,
+    uint8_t y,
+    Align horizontal,
+    Align vertical,
+    Font font,
+    const char* text);
 
 /** Set Icon Animation Element
  *
@@ -147,10 +144,14 @@ void start_screen_set_text3(
  * @param      y       top left y coordinate
  * @param      animation    IconAnimation instance
  */
-void start_screen_set_icon_animation(StartScreen* instance, uint8_t x, uint8_t y, const Icon* animation);
+void start_screen_set_icon_animation(
+    StartScreen* instance,
+    uint8_t x,
+    uint8_t y,
+    const Icon* animation);
 
 #ifdef __cplusplus
 }
-#endif
+#endif // __cplusplus
 
-#endif
+#endif // START_SCREEN_H

@@ -1,5 +1,5 @@
-#include "mine_sweeper_haptic.h"
-#include "../minesweeper.h"
+#include "minesweeper.h"
+#include "helpers/mine_sweeper_haptic.h"
 
 static const NotificationSequence sequence_minesweeper_haptic_short = {
     &message_vibro_on,
@@ -58,14 +58,13 @@ static inline MineSweeperApp* mine_sweeper_haptic_get_app(void* context) {
     return app;
 }
 
-static inline void mine_sweeper_haptic_play_if_enabled(
-    MineSweeperApp* app,
-    const NotificationSequence* sequence) {
+static inline void
+    mine_sweeper_haptic_play_if_enabled(MineSweeperApp* app, const NotificationSequence* sequence) {
     furi_assert(app);
     furi_assert(sequence);
     furi_assert(app->notification);
 
-    if(!app->feedback_enabled) {
+    if (!app->feedback_enabled) {
         return;
     }
 

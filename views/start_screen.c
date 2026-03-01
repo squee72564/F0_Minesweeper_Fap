@@ -70,8 +70,7 @@ void start_screen_view_enter(void* context) {
         start_screen->view,
         StartScreenModel * model,
         {
-            if (model->icon.animation != NULL)
-                icon_animation_start(model->icon.animation);
+            if (model->icon.animation != NULL) icon_animation_start(model->icon.animation);
         },
         true);
 }
@@ -84,8 +83,7 @@ void start_screen_view_exit(void* context) {
         start_screen->view,
         StartScreenModel * model,
         {
-            if (model->icon.animation != NULL)
-                icon_animation_stop(model->icon.animation);
+            if (model->icon.animation != NULL) icon_animation_stop(model->icon.animation);
         },
         true);
 }
@@ -157,10 +155,12 @@ bool start_screen_view_input_callback(InputEvent* event, void* context) {
     return consumed;
 }
 
-StartScreen* start_screen_alloc() {
+StartScreen* start_screen_alloc(void) {
     StartScreen* start_screen = (StartScreen*)malloc(sizeof(StartScreen));
+    if (start_screen == NULL) return NULL;
 
     start_screen->view = view_alloc();
+    if (start_screen->view == NULL) return NULL;
 
     start_screen->context = NULL;
     start_screen->input_callback = NULL;
@@ -171,18 +171,16 @@ StartScreen* start_screen_alloc() {
     with_view_model(
         start_screen->view,
         StartScreenModel * model,
-        {
-            start_screen_model_set_default(model);
-        },
+        { start_screen_model_set_default(model); },
         true);
 
     view_set_draw_callback(start_screen->view, start_screen_view_draw_callback);
     view_set_input_callback(start_screen->view, start_screen_view_input_callback);
-    
+
     // Right now these enter/exit callbacks are being used to start/stop animations
     view_set_enter_callback(start_screen->view, start_screen_view_enter);
     view_set_exit_callback(start_screen->view, start_screen_view_exit);
-    
+
     return start_screen;
 }
 
@@ -192,15 +190,16 @@ void start_screen_free(StartScreen* instance) {
     with_view_model(
         instance->view,
         StartScreenModel * model,
-        {
-            start_screen_icon_animation_cleanup(&model->icon);
-        },
+        { start_screen_icon_animation_cleanup(&model->icon); },
         false);
 
     instance->context = NULL;
     instance->input_callback = NULL;
-    view_free(instance->view);
-    free(instance);
+
+    if (instance->view)
+        view_free(instance->view);
+    if (instance)
+        free(instance);
 }
 
 void start_screen_reset(StartScreen* instance) {
@@ -228,14 +227,14 @@ void start_screen_set_input_callback(StartScreen* instance, StartScreenInputCall
     instance->input_callback = callback;
 }
 
-void start_screen_set_secondary_draw_callback(StartScreen* instance, StartScreenDrawCallback callback) {
+void start_screen_set_secondary_draw_callback(
+    StartScreen* instance,
+    StartScreenDrawCallback callback) {
     furi_assert(instance);
     with_view_model(
         instance->view,
         StartScreenModel * model,
-        {
-            model->secondary_draw_callback = callback;
-        },
+        { model->secondary_draw_callback = callback; },
         true);
 }
 
@@ -252,7 +251,6 @@ void start_screen_set_text1(
     Align vertical,
     Font font,
     const char* text) {
-
     furi_assert(instance);
     with_view_model(
         instance->view,
@@ -276,7 +274,6 @@ void start_screen_set_text2(
     Align vertical,
     Font font,
     const char* text) {
-
     furi_assert(instance);
     with_view_model(
         instance->view,
@@ -300,7 +297,6 @@ void start_screen_set_text3(
     Align vertical,
     Font font,
     const char* text) {
-
     furi_assert(instance);
     with_view_model(
         instance->view,
@@ -321,7 +317,6 @@ void start_screen_set_icon_animation(
     uint8_t x,
     uint8_t y,
     const Icon* animation) {
-
     furi_assert(instance);
     with_view_model(
         instance->view,
