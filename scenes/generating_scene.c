@@ -51,6 +51,7 @@ static void minesweeper_scene_generating_try_switch_to_game(
         return;
     }
 
+    mine_sweeper_game_screen_set_context(app->game_screen, &app->game_state);
     mine_sweeper_game_screen_reset_clock(app->game_screen);
     scene_manager_next_scene(app->scene_manager, MineSweeperSceneGameScreen);
 }
